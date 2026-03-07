@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -15,8 +14,16 @@ import SignupPage from './pages/SignupPage';
 import VerifyOtpPage from './pages/VerifyOtpPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import DashboardPage from './pages/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import { useEffect } from 'react';
+
+// Dashboard
+import DashboardLayout from './dashboard/DashboardLayout';
+import DashboardHome from './dashboard/pages/DashboardHome';
+import SavePage from './dashboard/pages/SavePage';
+import QuizPage from './dashboard/pages/QuizPage';
+import LeaderboardPage from './dashboard/pages/LeaderboardPage';
+import CoinsPage from './dashboard/pages/CoinsPage';
 
 function LandingPage() {
     useEffect(() => {
@@ -51,17 +58,26 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
+                {/* Public */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/verify-otp" element={<VerifyOtpPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+                {/* Protected Dashboard — nested layout */}
                 <Route path="/dashboard" element={
                     <ProtectedRoute>
-                        <DashboardPage />
+                        <DashboardLayout />
                     </ProtectedRoute>
-                } />
+                }>
+                    <Route index element={<DashboardHome />} />
+                    <Route path="save" element={<SavePage />} />
+                    <Route path="quiz" element={<QuizPage />} />
+                    <Route path="leaderboard" element={<LeaderboardPage />} />
+                    <Route path="coins" element={<CoinsPage />} />
+                </Route>
             </Routes>
         </BrowserRouter>
     );
