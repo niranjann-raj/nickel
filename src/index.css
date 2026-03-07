@@ -1,0 +1,218 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-heading-name: 'Poppins';
+    --font-body-name: 'Work Sans';
+    --font-heading: 'Poppins', sans-serif;
+    --font-body: 'Work Sans', sans-serif;
+    --letter-spacing-heading: -0.5px;
+    --letter-spacing-body: 0px;
+    --space-base: 1rem;
+    --radius-small: 12px;
+    --radius-large: 24px;
+    --border-width: 1px;
+    --shadow-color: 99 102 241;
+    --shadow-offset-x: 0px;
+    --shadow-offset-y: 8px;
+    --shadow-blur: 32px;
+    --shadow-spread: 0px;
+    --shadow-opacity: 0.15;
+    --shadow-custom: 0px 8px 32px rgba(99, 102, 241, 0.15);
+    --shadow-custom-hover: 0px 20px 60px rgba(99, 102, 241, 0.25);
+  }
+
+  /* Dark Mode Overrides */
+  .dark {
+    --shadow-custom: 0px 8px 32px rgba(99, 102, 241, 0.3);
+    --shadow-custom-hover: 0px 20px 60px rgba(99, 102, 241, 0.5);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ============================================================
+   DARK MODE - explicit overrides (since Tailwind JIT dark: variants
+   may not generate in dev). Toggled by .dark on <html>.
+   ============================================================ */
+html.dark body,
+html.dark #root {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+/* Navbar */
+html.dark nav {
+  background: rgba(17, 24, 39, 0.85) !important;
+  border-color: rgba(55, 65, 81, 0.5) !important;
+}
+
+html.dark nav a,
+html.dark nav span {
+  color: #d1d5db;
+}
+
+/* Cards and sections */
+html.dark section {
+  background-color: #111827;
+}
+
+html.dark .bg-gray-50 {
+  background-color: #1f2937 !important;
+}
+
+html.dark .bg-white {
+  background-color: #1f2937 !important;
+}
+
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4 {
+  color: #f9fafb;
+}
+
+html.dark p {
+  color: #9ca3af;
+}
+
+html.dark .card-glow {
+  border-color: rgba(55, 65, 81, 0.5);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.15), 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Override the App.tsx wrapper */
+html.dark [class*="bg-white"] {
+  background-color: #1f2937;
+}
+
+
+@layer utilities {
+  .gradient-text {
+    background: linear-gradient(135deg, #3B82F6, #8B5CF6, #EC4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #14B8A6 100%);
+  }
+
+  .gradient-bg-soft {
+    background: linear-gradient(135deg, #EFF6FF 0%, #F5F3FF 50%, #F0FDFA 100%);
+  }
+
+  .gradient-bg-dark {
+    background: linear-gradient(135deg, #1E1B4B 0%, #312E81 40%, #0F172A 100%);
+  }
+
+  .card-glow {
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.1), 0 8px 32px rgba(99, 102, 241, 0.12);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .card-glow:hover {
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2), 0 16px 48px rgba(99, 102, 241, 0.22);
+    transform: translateY(-4px);
+  }
+
+  .nav-blur {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.5;
+    animation: float 8s ease-in-out infinite;
+    z-index: 0;
+  }
+
+  .grid-pattern {
+    background-image: linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+  }
+
+  .xp-bar {
+    background: linear-gradient(90deg, #3B82F6, #8B5CF6, #EC4899);
+    border-radius: 999px;
+    animation: xpFill 2s ease-out forwards;
+  }
+
+  @keyframes xpFill {
+    from {
+      width: 0%;
+    }
+
+    to {
+      width: 72%;
+    }
+  }
+
+  .badge-shine {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .badge-shine::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.6) 50%, transparent 70%);
+    animation: shine 3s ease-in-out infinite;
+  }
+
+  @keyframes shine {
+    0% {
+      transform: translateX(-100%) rotate(45deg);
+    }
+
+    100% {
+      transform: translateX(100%) rotate(45deg);
+    }
+  }
+
+  .tilt-card {
+    transition: transform 0.1s ease-out;
+    transform-style: preserve-3d;
+  }
+
+  .tilt-content {
+    transform: translateZ(20px);
+  }
+
+  .floating-coin {
+    animation: float-fast 3s ease-in-out infinite;
+  }
+
+  .observe-animate {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .observe-animate.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .tech-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+  }
+}
