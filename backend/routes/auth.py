@@ -199,3 +199,52 @@ def me():
     if not user:
         return jsonify({'error': 'User not found.'}), 404
     return jsonify(user.to_dict()), 200
+
+
+@auth_bp.route('/update-profile', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if not user:
+        return jsonify({'error': 'User not found.'}), 404
+
+    data = request.get_json()
+    if 'full_name' in data and data['full_name'].strip():
+        user.full_name = data['full_name'].strip()
+    if 'age' in data:
+        try:
+            user.age = int(data['age']) if data['age'] else None
+        except (ValueError, TypeError):
+            pass
+    if 'phone' in data:
+        user.phone = str(data['phone']).strip() or None
+    if 'city' in data:
+        user.city = str(data['city']).strip() or None
+    if 'avatar' in data:
+        user.avatar = str(data['avatar']).strip()
+
+    db.session.commit()
+    return jsonify({'message': 'Profile updated.', 'user': user.to_dict()}), 200
+
+
+@auth_bp.route('/change-password', methods=['PUT'])
+@jwt_required()
+def change_password():
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if not user:
+        return jsonify({'error': 'User not found.'}), 404
+
+    data = request.get_json()
+    current_password = data.get('current_password', '')
+    new_password = data.get('new_password', '')
+
+    if not bcrypt.check_password_hash(user.password_hash, current_password):
+        return jsonify({'error': 'Current password is incorrect.'}), 401
+    if len(new_password) < 8:
+        return jsonify({'error': 'New password must be at least 8 characters.'}), 400
+
+    user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    db.session.commit()
+    return jsonify({'message': 'Password changed successfully.'}), 200

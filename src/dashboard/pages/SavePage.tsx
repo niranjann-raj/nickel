@@ -1,4 +1,5 @@
 import SavingWalletCard from '../components/SavingWalletCard';
+import TransactionHistoryCard from '../components/TransactionHistoryCard';
 import StreakCard from '../components/StreakCard';
 import { useDashboard } from '../DashboardLayout';
 import { IndianRupee, TrendingUp } from 'lucide-react';
@@ -32,6 +33,7 @@ export default function SavePage() {
             </div>
 
             <SavingWalletCard />
+            <TransactionHistoryCard />
             <StreakCard />
         </div>
     );

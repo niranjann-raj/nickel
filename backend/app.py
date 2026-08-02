@@ -10,6 +10,9 @@ from flask_jwt_extended import JWTManager
 from models import db
 from routes.auth import auth_bp, bcrypt
 from routes.dashboard import dashboard_bp
+from routes.bank import bank_bp
+from routes.autopay import autopay_bp
+from scheduler import start_scheduler
 
 def create_app():
     app = Flask(__name__)
@@ -29,15 +32,19 @@ def create_app():
     # Blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(dashboard_bp, url_prefix='/api')
+    app.register_blueprint(bank_bp, url_prefix='/api/bank')
+    app.register_blueprint(autopay_bp, url_prefix='/api/autopay')
 
     # Create tables
     with app.app_context():
         db.create_all()
+        
+    start_scheduler(app)
 
     return app
 
 
 if __name__ == '__main__':
     app = create_app()
-    print("🚀 nickle backend running on http://localhost:5000")
+    print(">>> Nickel backend running on http://localhost:5000")
     app.run(debug=True, port=5000)

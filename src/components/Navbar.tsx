@@ -37,9 +37,7 @@ export default function Navbar() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-20">
                         <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 gradient-bg rounded-small flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                                <span className="text-white font-heading font-black text-lg">N</span>
-                            </div>
+                            <img src="/logo.png" alt="Nickle Logo" className="w-10 h-10 rounded-xl shadow-lg shadow-indigo-500/10 object-cover" />
                             <span className="font-heading font-bold text-2xl text-gray-900 dark:text-white tracking-tight">nickle</span>
                         </div>
                         <div className="hidden md:flex items-center gap-8">

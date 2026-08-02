@@ -1,21 +1,19 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, PiggyBank, Brain, Trophy, Coins, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, PiggyBank, Brain, Trophy, Coins, LogOut, Settings, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 
 const links = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Overview', end: true },
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Home', end: true },
     { to: '/dashboard/save', icon: PiggyBank, label: 'Save Money' },
     { to: '/dashboard/quiz', icon: Brain, label: 'Quiz' },
     { to: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
-    { to: '/dashboard/coins', icon: Coins, label: 'Coins Wallet' },
+    { to: '/dashboard/shop', icon: ShoppingBag, label: 'Shop' },
+    { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
 ];
 
-interface SidebarProps {
-    open: boolean;
-    onClose: () => void;
-}
-
-export default function Sidebar({ open, onClose }: SidebarProps) {
+export default function Sidebar() {
     const navigate = useNavigate();
+    const [collapsed, setCollapsed] = useState(false);
 
     const logout = () => {
         localStorage.removeItem('nickle_token');
@@ -24,68 +22,68 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     };
 
     return (
-        <>
-            {/* Overlay */}
-            {open && (
-                <div
-                    className="fixed inset-0 bg-black/40 z-30 md:hidden"
-                    onClick={onClose}
-                />
-            )}
+        <aside className={`
+            relative h-full flex flex-col flex-shrink-0
+            bg-white dark:bg-gray-900
+            border-r border-gray-100 dark:border-gray-800
+            shadow-xl transition-all duration-300 ease-in-out
+            ${collapsed ? 'w-20' : 'w-64'}
+        `}>
+            {/* Logo */}
+            <div className={`flex items-center h-20 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 overflow-hidden transition-all duration-300 ${collapsed ? 'justify-center px-2' : 'px-6 gap-2'}`}>
+                <img src="/logo.png" alt="Nickle Logo" className="w-9 h-9 rounded-xl shadow-lg shadow-indigo-500/10 object-cover flex-shrink-0" />
+                {!collapsed && (
+                    <span className="font-heading font-bold text-xl text-gray-900 dark:text-white tracking-tight whitespace-nowrap">
+                        nickle
+                    </span>
+                )}
+            </div>
 
-            <aside className={`
-                fixed top-0 left-0 h-full w-64 z-40 flex flex-col
-                bg-white dark:bg-gray-900
-                border-r border-gray-100 dark:border-gray-800
-                shadow-xl transition-transform duration-300 ease-in-out
-                ${open ? 'translate-x-0' : '-translate-x-full'}
-                md:translate-x-0 md:static md:shadow-none md:z-auto
-            `}>
-                {/* Logo */}
-                <div className="flex items-center justify-between px-6 h-20 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 gradient-bg rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                            <span className="text-white font-heading font-black text-base">N</span>
-                        </div>
-                        <span className="font-heading font-bold text-xl text-gray-900 dark:text-white tracking-tight">nickle</span>
-                    </div>
-                    <button onClick={onClose} className="md:hidden text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+            {/* Collapse Toggle Button */}
+            <button
+                onClick={() => setCollapsed(c => !c)}
+                className="absolute -right-3.5 top-[72px] z-50 w-7 h-7 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center shadow-md hover:shadow-indigo-500/20 hover:border-indigo-400 transition-all"
+            >
+                {collapsed
+                    ? <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
+                    : <ChevronLeft className="w-3.5 h-3.5 text-gray-500" />
+                }
+            </button>
 
-                {/* Nav Links */}
-                <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-                    {links.map(({ to, icon: Icon, label, end }) => (
-                        <NavLink
-                            key={to}
-                            to={to}
-                            end={end}
-                            onClick={onClose}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
-                                    ? 'gradient-bg text-white shadow-md shadow-indigo-500/25'
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400'
-                                }`
-                            }
-                        >
-                            <Icon className="w-5 h-5 flex-shrink-0" />
-                            {label}
-                        </NavLink>
-                    ))}
-                </nav>
-
-                {/* Logout */}
-                <div className="px-4 py-4 border-t border-gray-100 dark:border-gray-800">
-                    <button
-                        onClick={logout}
-                        className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+            {/* Nav Links */}
+            <nav className={`flex-1 py-6 space-y-1 overflow-y-auto overflow-x-hidden ${collapsed ? 'px-2' : 'px-4'}`}>
+                {links.map(({ to, icon: Icon, label, end }) => (
+                    <NavLink
+                        key={to}
+                        to={to}
+                        end={end}
+                        title={collapsed ? label : undefined}
+                        className={({ isActive }) =>
+                            `flex items-center gap-3 py-3 rounded-xl text-sm font-semibold transition-all
+                            ${collapsed ? 'justify-center px-0' : 'px-4'}
+                            ${isActive
+                                ? 'gradient-bg text-white shadow-md shadow-indigo-500/25'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400'
+                            }`
+                        }
                     >
-                        <LogOut className="w-5 h-5" />
-                        Logout
-                    </button>
-                </div>
-            </aside>
-        </>
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        {!collapsed && <span className="whitespace-nowrap">{label}</span>}
+                    </NavLink>
+                ))}
+            </nav>
+
+            {/* Logout */}
+            <div className={`py-4 border-t border-gray-100 dark:border-gray-800 ${collapsed ? 'px-2' : 'px-4'}`}>
+                <button
+                    onClick={logout}
+                    title={collapsed ? 'Logout' : undefined}
+                    className={`flex items-center gap-3 w-full py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all ${collapsed ? 'justify-center px-0' : 'px-4'}`}
+                >
+                    <LogOut className="w-5 h-5 flex-shrink-0" />
+                    {!collapsed && <span>Logout</span>}
+                </button>
+            </div>
+        </aside>
     );
 }

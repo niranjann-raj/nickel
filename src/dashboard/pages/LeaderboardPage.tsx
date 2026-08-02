@@ -4,7 +4,8 @@ import { Trophy } from 'lucide-react';
 const TIERS = [
     { rank: 'Rank 1', coins: '5,000 🪙' }, { rank: 'Rank 2', coins: '2,500 🪙' },
     { rank: 'Rank 3', coins: '1,000 🪙' }, { rank: 'Rank 4–10', coins: '750 🪙' },
-    { rank: 'Rank 11–50', coins: '500 🪙' }, { rank: 'Rank 51–100', coins: '100 🪙' },
+    { rank: 'Rank 11–50', coins: '500 🪙' }, { rank: 'Rank 51–100', coins: '250 🪙' },
+    { rank: 'Rank 101+', coins: '25 🪙' },
 ];
 
 export default function LeaderboardPage() {

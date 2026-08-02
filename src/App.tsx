@@ -24,6 +24,8 @@ import SavePage from './dashboard/pages/SavePage';
 import QuizPage from './dashboard/pages/QuizPage';
 import LeaderboardPage from './dashboard/pages/LeaderboardPage';
 import CoinsPage from './dashboard/pages/CoinsPage';
+import SettingsPage from './dashboard/pages/SettingsPage';
+import ShopPage from './dashboard/pages/ShopPage';
 
 function LandingPage() {
     useEffect(() => {
@@ -77,6 +79,8 @@ function App() {
                     <Route path="quiz" element={<QuizPage />} />
                     <Route path="leaderboard" element={<LeaderboardPage />} />
                     <Route path="coins" element={<CoinsPage />} />
+                    <Route path="settings" element={<SettingsPage />} />
+                    <Route path="shop" element={<ShopPage />} />
                 </Route>
             </Routes>
         </BrowserRouter>

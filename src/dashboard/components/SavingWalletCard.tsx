@@ -1,125 +1,202 @@
-import { useState } from 'react';
-import { PiggyBank, CheckCircle, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { PiggyBank, Briefcase, Activity, AlertCircle, Play, Pause, Square, Plus, FastForward, Edit3, Check, X } from 'lucide-react';
 import { api } from '../api';
 import { useDashboard } from '../DashboardLayout';
 
 const LEVELS = [
-    { key: 'easy', label: 'Easy', pct: '20%', xp: '+100 XP', color: 'border-teal-400 bg-teal-50 dark:bg-teal-900/20', badge: 'bg-teal-100 text-teal-700 dark:bg-teal-800/30 dark:text-teal-300' },
-    { key: 'medium', label: 'Medium', pct: '30%', xp: '+200 XP', color: 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20', badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-800/30 dark:text-indigo-300' },
-    { key: 'hard', label: 'Hard', pct: '40%', xp: '+300 XP', color: 'border-purple-400 bg-purple-50 dark:bg-purple-900/20', badge: 'bg-purple-100 text-purple-700 dark:bg-purple-800/30 dark:text-purple-300' },
+    { key: 'EASY', label: 'Easy', pct: '20%', xp: '+100 XP', color: 'border-teal-400 bg-teal-50 dark:bg-teal-900/20' },
+    { key: 'MEDIUM', label: 'Medium', pct: '30%', xp: '+200 XP', color: 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' },
+    { key: 'HARD', label: 'Hard', pct: '40%', xp: '+300 XP', color: 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' },
 ];
 
 export default function SavingWalletCard() {
     const { refreshUser } = useDashboard();
-    const [amount, setAmount] = useState('');
-    const [level, setLevel] = useState('easy');
-    const [result, setResult] = useState<any>(null);
+    const [bankBalance, setBankBalance] = useState(0);
+    const [walletBalance, setWalletBalance] = useState(0);
+    const [cycle, setCycle] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [selectedLevel, setSelectedLevel] = useState('EASY');
+    const [depositAmount, setDepositAmount] = useState('');
+    const [isEditingBank, setIsEditingBank] = useState(false);
+    const [editAmount, setEditAmount] = useState('');
 
-    const cfg = LEVELS.find(l => l.key === level)!;
-    const preview = amount && !isNaN(Number(amount)) && Number(amount) > 0
-        ? {
-            saved: Math.round(Number(amount) * (level === 'easy' ? 0.2 : level === 'medium' ? 0.3 : 0.4) * 100) / 100,
-            remaining: Math.round(Number(amount) * (level === 'easy' ? 0.8 : level === 'medium' ? 0.7 : 0.6) * 100) / 100
-        }
-        : null;
-
-    const handleSave = async () => {
-        if (!amount || Number(amount) <= 0) { setError('Please enter a valid amount'); return; }
-        setError(''); setLoading(true); setResult(null);
+    const fetchData = async () => {
+        setLoading(true);
         try {
-            const data = await api.post('/api/add-saving', { amount: Number(amount), level });
-            setResult(data);
-            setAmount('');
-            refreshUser();
+            const b = await api.bank.getBalance();
+            setBankBalance(b.balance || 0);
+            
+            const w = await api.autopay.getWallet();
+            setWalletBalance(w.wallet_balance || 0);
+            
+            const s = await api.autopay.getStatus();
+            setCycle(s.has_active_cycle ? s.cycle : null);
+            
         } catch (e: any) {
-            setError(e.message);
+            console.error(e);
         } finally {
             setLoading(false);
         }
     };
 
+    useEffect(() => {
+        fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleDeposit = async () => {
+        if (!depositAmount || Number(depositAmount) <= 0) return;
+        setError('');
+        try {
+            await api.bank.deposit(Number(depositAmount));
+            setDepositAmount('');
+            setIsEditingBank(false);
+            fetchData();
+        } catch (e: any) { setError(e.message); }
+    };
+
+    const handleEditBank = async () => {
+        if (!editAmount || Number(editAmount) < 0) return;
+        setError('');
+        try {
+            await api.bank.edit(Number(editAmount));
+            setIsEditingBank(false);
+            fetchData();
+        } catch (e: any) { setError(e.message); }
+    };
+
+    const handleStart = async () => {
+        setError('');
+        try {
+            await api.autopay.start(selectedLevel);
+            fetchData();
+        } catch (e: any) { setError(e.message); }
+    };
+
+    const handleAction = async (action: 'pause' | 'resume' | 'stop' | 'simulateDay') => {
+        setError('');
+        try {
+            const res = await api.autopay[action]();
+            if (res && res.streak_reset) {
+                alert(res.message || "Your streak has been reset to 0.");
+            }
+            fetchData();
+            refreshUser();
+        } catch (e: any) { setError(e.message); }
+    };
+
+    if (loading) return <div className="bg-white dark:bg-gray-900 rounded-[24px] p-6 h-64 border border-gray-100 dark:border-gray-800 animate-pulse"></div>;
+
     return (
         <div className="bg-white dark:bg-gray-900 rounded-[24px] p-6 border border-gray-100 dark:border-gray-800 card-glow">
-            <div className="flex items-center gap-3 mb-5">
-                <div className="w-11 h-11 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center">
-                    <PiggyBank className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            {/* Header: Balances */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2 text-gray-500">
+                            <Briefcase className="w-4 h-4"/> <span className="text-xs font-bold uppercase">Dummy Bank</span>
+                        </div>
+                        <button onClick={() => { setIsEditingBank(!isEditingBank); setEditAmount(bankBalance.toString()); }} className="text-gray-400 hover:text-indigo-500 transition-colors">
+                            <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                    
+                    {isEditingBank ? (
+                        <div className="mt-2 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex gap-1 text-2xl font-black text-gray-900 dark:text-white items-center">
+                                <span>₹</span>
+                                <input type="number" autoFocus value={editAmount} onChange={e => setEditAmount(e.target.value)} className="w-full bg-transparent border-b-2 border-indigo-500 outline-none p-0 focus:ring-0" />
+                            </div>
+                            <div className="flex gap-2 mt-3">
+                                <button onClick={handleEditBank} className="flex-1 bg-indigo-500 text-white p-1 rounded font-bold text-xs flex justify-center items-center h-7 hover:bg-indigo-600"><Check className="w-4 h-4"/></button>
+                                <button onClick={() => setIsEditingBank(false)} className="px-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex justify-center items-center h-7"><X className="w-4 h-4"/></button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="animate-in fade-in duration-200">
+                            <div className="text-2xl font-black text-gray-900 dark:text-white">₹{bankBalance.toLocaleString()}</div>
+                            <div className="flex gap-2 mt-3">
+                                <input type="number" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} placeholder="Deposit Amount" className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500" />
+                                <button onClick={handleDeposit} className="bg-indigo-500 text-white px-2 rounded hover:bg-indigo-600 transition-colors font-bold text-xs text-center flex justify-center items-center h-7">Add</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
-                <div>
-                    <h3 className="font-heading font-bold text-lg text-gray-900 dark:text-white">Saving Wallet</h3>
-                    <p className="text-xs text-gray-400">Save money & earn XP</p>
+                <div className="p-4 bg-teal-50 dark:bg-teal-900/20 rounded-2xl border border-teal-100 dark:border-teal-900/50">
+                    <div className="flex items-center gap-2 text-teal-600 mb-1"><PiggyBank className="w-4 h-4"/> <span className="text-xs font-bold uppercase">Savings Wallet</span></div>
+                    <div className="text-2xl font-black text-teal-700 dark:text-teal-300">₹{walletBalance.toLocaleString()}</div>
                 </div>
             </div>
 
-            {result ? (
-                <div className="text-center py-4">
-                    <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-                    <p className="font-bold text-xl text-gray-900 dark:text-white mb-1">₹{result.saved_amount} Saved! 🎉</p>
-                    <p className="text-gray-500 text-sm mb-3">Remaining: ₹{result.remaining}</p>
-                    <div className="flex justify-center gap-3 flex-wrap">
-                        <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-bold">+{result.xp_earned} XP</span>
-                        {result.streak_bonus_xp > 0 && <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-3 py-1 rounded-full text-sm font-bold">+{result.streak_bonus_xp} Streak Bonus XP 🔥</span>}
-                        <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-3 py-1 rounded-full text-sm font-bold">🔥 {result.current_streak} day streak</span>
-                    </div>
-                    <button onClick={() => setResult(null)} className="mt-4 text-sm text-indigo-500 hover:underline">Save again</button>
-                </div>
-            ) : (
-                <>
-                    <div className="mb-4">
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Enter Amount</label>
-                        <div className="relative">
-                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                            <input
-                                type="number"
-                                min="1"
-                                value={amount}
-                                onChange={e => setAmount(e.target.value)}
-                                placeholder="1000"
-                                className="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                            />
-                        </div>
-                        {preview && (
-                            <div className="mt-2 flex gap-3 text-xs">
-                                <span className="bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 px-2 py-1 rounded-lg font-medium">Saved: ₹{preview.saved}</span>
-                                <span className="bg-gray-100 dark:bg-gray-800 text-gray-500 px-2 py-1 rounded-lg font-medium">Remaining: ₹{preview.remaining}</span>
-                            </div>
-                        )}
-                    </div>
+            {error && <div className="text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-xs mb-4 flex items-center gap-2 font-medium"><AlertCircle className="w-4 h-4 flex-shrink-0"/><span>{error}</span></div>}
 
-                    <div className="mb-5">
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Select Difficulty</label>
-                        <div className="grid grid-cols-3 gap-2">
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-5">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-indigo-500" />
+                        <h3 className="font-heading font-bold text-lg text-gray-900 dark:text-white">Autopay Cycle</h3>
+                    </div>
+                    {cycle && (
+                        <div className={`text-xs font-black px-2.5 py-1 rounded-full shadow-md ${
+                            cycle.level === 'EASY' ? 'bg-teal-100 text-teal-700' :
+                            cycle.level === 'MEDIUM' ? 'bg-indigo-100 text-indigo-700' :
+                            'bg-purple-100 text-purple-700'
+                        }`}>
+                            {cycle.level.charAt(0) + cycle.level.slice(1).toLowerCase()}
+                        </div>
+                    )}
+                </div>
+
+                {!cycle ? (
+                    <div>
+                        <p className="text-xs text-gray-500 mb-3">Turn on Autopay to automate your savings and earn daily XP!</p>
+                        <div className="grid grid-cols-3 gap-2 mb-4">
                             {LEVELS.map(l => (
-                                <button
-                                    key={l.key}
-                                    onClick={() => setLevel(l.key)}
-                                    className={`border-2 rounded-2xl p-3 text-center transition-all ${level === l.key ? l.color + ' border-opacity-100 scale-105 shadow-md' : 'border-gray-200 dark:border-gray-700 bg-transparent hover:border-gray-300'}`}
-                                >
-                                    <p className="font-bold text-sm text-gray-900 dark:text-white">{l.label}</p>
-                                    <p className="text-xs text-gray-500 mt-0.5">Save {l.pct}</p>
-                                    <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-bold ${l.badge}`}>{l.xp}</span>
+                                <button key={l.key} onClick={() => setSelectedLevel(l.key)} className={`border-2 rounded-xl p-2 text-center transition-all ${selectedLevel === l.key ? l.color + ' border-opacity-100 scale-105 shadow-sm' : 'border-gray-100 dark:border-gray-800 hover:border-gray-300'}`}>
+                                    <div className="font-bold text-sm text-gray-900 dark:text-white">{l.label}</div>
+                                    <div className="text-[10px] text-gray-500">{l.pct}</div>
                                 </button>
                             ))}
                         </div>
+                        <button onClick={handleStart} className="w-full gradient-bg text-white py-3 rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-indigo-500/30 transition-transform hover:scale-[1.02]">Start Autopay ({LEVELS.find(l=>l.key===selectedLevel)?.pct})</button>
                     </div>
-
-                    {error && (
-                        <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 text-red-500 px-3 py-2 rounded-xl text-sm mb-3">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            {error}
+                ) : (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500 font-medium">Status</span>
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${cycle.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>{cycle.status}</span>
                         </div>
-                    )}
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500 font-medium">Target / Deduction</span>
+                            <span className="font-bold text-gray-900 dark:text-white">₹{cycle.target_amount.toLocaleString()} / ₹{cycle.daily_deduction.toLocaleString()}</span>
+                        </div>
+                        
+                        <div>
+                            <div className="flex justify-between text-xs mb-1">
+                                <span className="font-bold text-gray-700 dark:text-gray-300">Day {cycle.current_day} of 30</span>
+                                <span className="text-indigo-500 font-bold">{Math.round((cycle.current_day/30)*100)}%</span>
+                            </div>
+                            <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <div className="h-full gradient-bg transition-all" style={{ width: `${(cycle.current_day/30)*100}%` }} />
+                            </div>
+                        </div>
 
-                    <button
-                        onClick={handleSave}
-                        disabled={loading}
-                        className="w-full gradient-bg text-white py-3.5 rounded-xl font-bold text-base hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02] transition-all disabled:opacity-60 disabled:scale-100"
-                    >
-                        {loading ? 'Saving…' : `Save Money (${cfg.pct})`}
-                    </button>
-                </>
-            )}
+                        <div className="flex gap-2">
+                            {cycle.status === 'ACTIVE' ? (
+                                <button onClick={() => handleAction('pause')} className="flex-1 bg-orange-100 text-orange-700 py-2.5 rounded-xl flex justify-center items-center gap-1.5 font-bold text-sm hover:bg-orange-200 transition-colors"><Pause className="w-4 h-4"/> Pause</button>
+                            ) : (
+                                <button onClick={() => handleAction('resume')} className="flex-1 bg-green-100 text-green-700 py-2.5 rounded-xl flex justify-center items-center gap-1.5 font-bold text-sm hover:bg-green-200 transition-colors"><Play className="w-4 h-4"/> Resume</button>
+                            )}
+                            <button onClick={() => handleAction('stop')} className="flex-1 bg-red-100 text-red-700 py-2.5 rounded-xl flex justify-center items-center gap-1.5 font-bold text-sm hover:bg-red-200 transition-colors"><Square className="w-4 h-4"/> Stop</button>
+                        </div>
+
+                        <button onClick={() => handleAction('simulateDay')} className="w-full border-2 border-indigo-100 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors">
+                            <FastForward className="w-4 h-4"/> Simulate Next Day
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

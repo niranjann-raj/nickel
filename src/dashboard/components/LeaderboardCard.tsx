@@ -28,8 +28,11 @@ export default function LeaderboardCard() {
                     <Trophy className="w-6 h-6 text-yellow-500" />
                 </div>
                 <div>
-                    <h3 className="font-heading font-bold text-lg text-gray-900 dark:text-white">Leaderboard</h3>
-                    {data?.your_rank && <p className="text-xs text-gray-400">Your rank: <span className="text-indigo-500 font-bold">#{data.your_rank}</span></p>}
+                    <h3 className="font-heading font-bold text-lg text-gray-900 dark:text-white">Season Leaderboard</h3>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">Season {data?.season || 1} • Resets Sunday</p>
+                        {data?.your_rank && <p className="text-xs text-gray-500">Rank: <span className="text-indigo-500 font-bold">#{data.your_rank}</span></p>}
+                    </div>
                 </div>
             </div>
 
@@ -69,7 +72,6 @@ export default function LeaderboardCard() {
                         </div>
                         <div className="text-right flex-shrink-0">
                             <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{entry.xp.toLocaleString()} XP</p>
-                            <p className="text-xs text-yellow-500">🪙 {entry.rank_coins.toLocaleString()}</p>
                         </div>
                     </div>
                 ))}

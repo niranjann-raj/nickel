@@ -8,7 +8,7 @@ const TOPICS: Record<string, string> = {
 };
 
 export default function QuizPage() {
-    const { user, refreshUser } = useDashboard();
+    const { user, refreshUser, addNotification } = useDashboard();
     const [questions, setQuestions] = useState<any[]>([]);
     const [answers, setAnswers] = useState<Record<number, string>>({});
     const [submitted, setSubmitted] = useState(false);
@@ -56,6 +56,11 @@ export default function QuizPage() {
         try {
             const data = await api.post('/api/submit-quiz', { answers: payload });
             setResult(data); setSubmitted(true);
+            if (data.coins_earned > 0) {
+                addNotification('Quiz Completed!', `You scored ${data.score}/${data.total} and earned ${data.coins_earned} coins.`, 'reward');
+            } else {
+                addNotification('Quiz Completed!', `You scored ${data.score}/${data.total}. Improve next time!`, 'info');
+            }
             refreshUser();
         } catch (e: any) {
             setError(e.message);
@@ -97,22 +102,57 @@ export default function QuizPage() {
             </div>
 
             {/* Answer review */}
-            <div className="mt-8 text-left space-y-4">
-                {questions.map((q: any) => {
-                    const userAns = answers[q.id];
-                    const correct = result?.correct_answers?.[q.id];
+            <div className="mt-8 text-left space-y-6">
+                {(result.results || []).map((res: any, i: number) => {
+                    const qObj = questions.find(q => q.id === res.id);
+                    const isCorrect = res.user_answer === res.correct_answer;
+                    
                     return (
-                        <div key={q.id} className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">{q.question}</p>
-                            {['a', 'b', 'c', 'd'].map(opt => {
-                                const text = q[`option_${opt}`];
-                                return (
-                                    <div key={opt} className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-xl mb-1 ${userAns === opt ? 'bg-indigo-50 dark:bg-indigo-900/20 font-semibold' : ''}`}>
-                                        <span className="opacity-60 w-4">{opt.toUpperCase()}.</span>
-                                        {text}
+                        <div key={res.id} className={`bg-white dark:bg-gray-900 rounded-2xl p-6 border ${isCorrect ? 'border-green-200 dark:border-green-900/50' : 'border-red-200 dark:border-red-900/50'}`}>
+                            <div className="flex items-start gap-3 mb-4">
+                                {isCorrect ? (
+                                    <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                                ) : (
+                                    <XCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" />
+                                )}
+                                <div>
+                                    <p className="font-semibold text-gray-900 dark:text-white">{i + 1}. {res.question}</p>
+                                </div>
+                            </div>
+                            
+                            <div className="pl-9 space-y-2 mb-4">
+                                {qObj && ['a', 'b', 'c', 'd'].map(opt => {
+                                    const text = qObj[`option_${opt}`];
+                                    let style = "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400";
+                                    
+                                    if (opt === res.correct_answer) {
+                                        style = "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold border border-green-200 dark:border-green-800/50";
+                                    } else if (opt === res.user_answer) {
+                                        style = "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/50";
+                                    }
+
+                                    return (
+                                        <div key={opt} className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl transition-all ${style}`}>
+                                            <span className="opacity-80 w-5">{opt.toUpperCase()}.</span>
+                                            {text}
+                                            {opt === res.correct_answer && <CheckCircle className="w-4 h-4 ml-auto opacity-70" />}
+                                            {opt === res.user_answer && opt !== res.correct_answer && <XCircle className="w-4 h-4 ml-auto opacity-70" />}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {res.explanation && (
+                                <div className="pl-9 mt-4">
+                                    <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 border border-indigo-100 dark:border-indigo-800/50">
+                                        <div className="flex items-center gap-2 mb-1 text-indigo-700 dark:text-indigo-400 font-semibold text-sm">
+                                            <Brain className="w-4 h-4" />
+                                            <span>Explanation</span>
+                                        </div>
+                                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{res.explanation}</p>
                                     </div>
-                                );
-                            })}
+                                </div>
+                            )}
                         </div>
                     );
                 })}

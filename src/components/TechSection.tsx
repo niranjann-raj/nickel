@@ -38,10 +38,10 @@ export default function TechSection() {
                             <Database className="w-7 h-7 text-teal-400" />
                         </div>
                         <h3 className="font-heading font-bold text-white mb-3 text-xl">Database</h3>
-                        <p className="text-teal-200 text-sm mb-6 leading-relaxed">Flexible NoSQL storage for user data, goals, and gamification state.</p>
+                        <p className="text-teal-200 text-sm mb-6 leading-relaxed">Robust relational storage for user data, goals, and gamification state.</p>
                         <div className="flex flex-wrap gap-2">
-                            <span className="bg-teal-500/20 text-teal-300 text-xs font-bold px-3 py-1 rounded-full border border-teal-500/20">MongoDB</span>
-                            <span className="bg-teal-500/20 text-teal-300 text-xs font-bold px-3 py-1 rounded-full border border-teal-500/20">Firebase</span>
+                            <span className="bg-teal-500/20 text-teal-300 text-xs font-bold px-3 py-1 rounded-full border border-teal-500/20">PostgreSQL</span>
+                            <span className="bg-teal-500/20 text-teal-300 text-xs font-bold px-3 py-1 rounded-full border border-teal-500/20">SQLAlchemy</span>
                         </div>
                     </div>
                     <div className="tech-card rounded-[24px] p-8 observe-animate hover:bg-white/10 transition-colors" style={{ transitionDelay: '0.3s' }}>
