@@ -20,6 +20,7 @@ export default function SavingWalletCard() {
     const [depositAmount, setDepositAmount] = useState('');
     const [isEditingBank, setIsEditingBank] = useState(false);
     const [editAmount, setEditAmount] = useState('');
+    const [showBalanceWarning, setShowBalanceWarning] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
@@ -68,6 +69,11 @@ export default function SavingWalletCard() {
 
     const handleStart = async () => {
         setError('');
+        setShowBalanceWarning(false);
+        if (bankBalance < 1000) {
+            setShowBalanceWarning(true);
+            return;
+        }
         try {
             await api.autopay.start(selectedLevel);
             fetchData();
@@ -150,6 +156,30 @@ export default function SavingWalletCard() {
 
                 {!cycle ? (
                     <div>
+                        {showBalanceWarning && (
+                            <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 p-4 rounded-r-xl mb-4 text-left">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <AlertCircle className="w-5 h-5 text-orange-500" />
+                                    <h4 className="font-bold text-orange-800 dark:text-orange-300">Minimum Balance Required</h4>
+                                </div>
+                                <p className="text-xs text-orange-700 dark:text-orange-400 mb-3 leading-relaxed">
+                                    Your bank account balance must be at least ₹1000 before Autopay can begin.
+                                </p>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="bg-white/60 dark:bg-black/20 p-2 rounded-lg">
+                                        <span className="block text-gray-500 mb-0.5">Current Balance</span>
+                                        <span className="font-black text-orange-700 dark:text-orange-400">₹{bankBalance.toLocaleString()}</span>
+                                    </div>
+                                    <div className="bg-white/60 dark:bg-black/20 p-2 rounded-lg">
+                                        <span className="block text-gray-500 mb-0.5">Required Balance</span>
+                                        <span className="font-black text-gray-900 dark:text-gray-100">₹1,000</span>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-orange-700 dark:text-orange-400 mt-3 font-medium italic">
+                                    Please deposit additional funds to activate Autopay.
+                                </p>
+                            </div>
+                        )}
                         <p className="text-xs text-gray-500 mb-3">Turn on Autopay to automate your savings and earn daily XP!</p>
                         <div className="grid grid-cols-3 gap-2 mb-4">
                             {LEVELS.map(l => (

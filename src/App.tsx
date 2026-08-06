@@ -26,6 +26,8 @@ import LeaderboardPage from './dashboard/pages/LeaderboardPage';
 import CoinsPage from './dashboard/pages/CoinsPage';
 import SettingsPage from './dashboard/pages/SettingsPage';
 import ShopPage from './dashboard/pages/ShopPage';
+import GoalsPage from './dashboard/pages/GoalsPage';
+import GoalDetailsPage from './dashboard/pages/GoalDetailsPage';
 
 function LandingPage() {
     useEffect(() => {
@@ -81,6 +83,8 @@ function App() {
                     <Route path="coins" element={<CoinsPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="shop" element={<ShopPage />} />
+                    <Route path="goals" element={<GoalsPage />} />
+                    <Route path="goals/:id" element={<GoalDetailsPage />} />
                 </Route>
             </Routes>
         </BrowserRouter>
