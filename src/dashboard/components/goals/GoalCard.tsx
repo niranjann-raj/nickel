@@ -1,6 +1,6 @@
-import { Target, Play, Pause, Edit3, Trash2, Calendar, TrendingUp } from 'lucide-react';
+import { Target, Play, Pause, Edit3, Trash2, Calendar, TrendingUp, Zap } from 'lucide-react';
 
-export default function GoalCard({ goal, onView, onEdit, onPause, onDelete }: any) {
+export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRunAutopay }: any) {
     const progress = goal.target_amount > 0 ? (goal.saved_amount / goal.target_amount) * 100 : 0;
     const progressCapped = Math.min(progress, 100).toFixed(0);
     
@@ -52,6 +52,22 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete }: an
                     </div>
                 </div>
 
+                {/* AutoPay Info */}
+                {goal.auto_saving && (
+                    <div className="mb-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl p-3 flex justify-between items-center text-xs">
+                        <div className="text-gray-500 dark:text-gray-400">
+                            AutoPay: <span className="font-bold text-indigo-500">{goal.auto_saving.frequency}</span>
+                        </div>
+                        <div className="font-bold text-gray-900 dark:text-white">
+                            ₹{goal.auto_saving.amount}
+                        </div>
+                        <div className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {goal.auto_saving.next_run_date ? new Date(goal.auto_saving.next_run_date).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}) : 'TBD'}
+                        </div>
+                    </div>
+                )}
+
                 {/* Progress Bar */}
                 <div className="relative h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-4 shadow-inner">
                     <div 
@@ -71,10 +87,19 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete }: an
                 <div className="grid grid-cols-2 gap-3">
                     <button 
                         onClick={() => onView(goal.id)}
-                        className="col-span-2 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm flex items-center justify-center gap-2"
+                        className="col-span-1 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm flex items-center justify-center gap-2"
                     >
-                        <TrendingUp className="w-4 h-4" /> View Details
+                        <TrendingUp className="w-4 h-4" /> View
                     </button>
+                    {!isCompleted && goal.auto_saving && (
+                        <button 
+                            onClick={() => onRunAutopay(goal.id)}
+                            className="col-span-1 py-3 rounded-xl bg-indigo-500 text-white font-bold hover:bg-indigo-600 transition-colors shadow-sm shadow-indigo-500/20 flex items-center justify-center gap-2"
+                            title="Test AutoPay Manually"
+                        >
+                            <Zap className="w-4 h-4" /> Run
+                        </button>
+                    )}
                     {/* Secondary Actions hover reveal or just icons */}
                     <div className="col-span-2 flex justify-end gap-2 mt-2 border-t border-gray-100 dark:border-gray-800 pt-4">
                         <button onClick={() => onEdit(goal)} className="p-2 text-gray-400 hover:text-indigo-500 transition-colors" title="Edit">

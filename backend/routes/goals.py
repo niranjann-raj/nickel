@@ -40,8 +40,17 @@ def get_goals():
         elif a_s.frequency == 'CUSTOM' and a_s.custom_days and a_s.custom_days > 0:
             monthly_saving += a_s.amount * (30 / a_s.custom_days)
 
+    goals_data = []
+    for g in goals:
+        g_dict = g.to_dict()
+        a_s = next((a for a in auto_savings if a.goal_id == g.id), None)
+        if not a_s:
+            a_s = GoalAutoSaving.query.filter_by(goal_id=g.id).first()
+        g_dict['auto_saving'] = a_s.to_dict() if a_s else None
+        goals_data.append(g_dict)
+
     return jsonify({
-        'goals': [g.to_dict() for g in goals],
+        'goals': goals_data,
         'summary': {
             'total_active': len(active_goals),
             'total_completed': len(completed_goals),
@@ -137,6 +146,42 @@ def delete_goal(goal_id):
     db.session.commit()
     
     return jsonify({'message': 'Goal deleted'}), 200
+
+@goals_bp.route('/<int:goal_id>', methods=['PUT'])
+@jwt_required()
+def edit_goal(goal_id):
+    user_id = get_jwt_identity()
+    goal = Goal.query.filter_by(id=goal_id, user_id=user_id).first()
+    if not goal:
+        return jsonify({'error': 'Goal not found'}), 404
+        
+    data = request.get_json()
+    if 'name' in data and data['name']:
+        goal.name = data['name']
+    if 'target_amount' in data:
+        try:
+            goal.target_amount = float(data['target_amount'])
+        except ValueError:
+            pass
+            
+    db.session.commit()
+    return jsonify({'message': 'Goal updated', 'goal': goal.to_dict()}), 200
+
+@goals_bp.route('/<int:goal_id>/status', methods=['PUT'])
+@jwt_required()
+def update_goal_status(goal_id):
+    user_id = get_jwt_identity()
+    goal = Goal.query.filter_by(id=goal_id, user_id=user_id).first()
+    if not goal:
+        return jsonify({'error': 'Goal not found'}), 404
+        
+    if goal.status == 'ACTIVE':
+        goal.status = 'PAUSED'
+    elif goal.status == 'PAUSED':
+        goal.status = 'ACTIVE'
+        
+    db.session.commit()
+    return jsonify({'message': 'Goal status updated', 'status': goal.status}), 200
 
 @goals_bp.route('/<int:goal_id>/simulate-purchase', methods=['POST'])
 @jwt_required()
@@ -254,3 +299,40 @@ def purchase_decision(goal_id):
         'message': 'Decision recorded',
         'goal': goal.to_dict()
     }), 200
+
+@goals_bp.route('/<int:goal_id>/autopay/run', methods=['POST'])
+@jwt_required()
+def run_goal_autopay(goal_id):
+    user_id = get_jwt_identity()
+    goal = Goal.query.filter_by(id=goal_id, user_id=user_id).first()
+    if not goal:
+        return jsonify({'error': 'Goal not found'}), 404
+        
+    auto_saving = GoalAutoSaving.query.filter_by(goal_id=goal.id).first()
+    if not auto_saving:
+        return jsonify({'error': 'No auto-saving configured for this goal'}), 400
+        
+    if goal.status != 'ACTIVE':
+        return jsonify({'error': f'Goal is {goal.status}, cannot run autopay'}), 400
+        
+    from scheduler import process_goal_autopay
+    from datetime import date
+    
+    # We call the scheduler function directly for manual test
+    try:
+        process_goal_autopay(auto_saving, date.today())
+        
+        # After execution, fetch latest state to return
+        db.session.refresh(goal)
+        db.session.refresh(auto_saving)
+        
+        latest_tx = GoalTransaction.query.filter_by(goal_id=goal.id, type='GOAL_AUTOPAY').order_by(GoalTransaction.id.desc()).first()
+        
+        return jsonify({
+            'message': 'AutoPay executed',
+            'goal': goal.to_dict(),
+            'transaction': latest_tx.to_dict() if latest_tx else None
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+

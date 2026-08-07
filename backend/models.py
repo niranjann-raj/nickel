@@ -170,6 +170,7 @@ class Autopay(db.Model):
     freeze_days_left = db.Column(db.Integer, default=0)
     cycle_start_date = db.Column(db.Date, default=lambda: date.today())
     last_run_date = db.Column(db.Date, nullable=True)
+    manual_pauses = db.Column(db.Integer, default=0)
 
 class SavingsWallet(db.Model):
     __tablename__ = 'savings_wallet'
@@ -232,9 +233,18 @@ class GoalTransaction(db.Model):
     __tablename__ = 'goal_transactions'
     id = db.Column(db.Integer, primary_key=True)
     goal_id = db.Column(db.Integer, db.ForeignKey('goals.id'), nullable=False)
-    type = db.Column(db.String(20), nullable=False) # CREDIT, DEBIT, SPLURGE
+    type = db.Column(db.String(20), nullable=False) # CREDIT, DEBIT, SPLURGE, GOAL_AUTOPAY
     amount = db.Column(db.Float, nullable=False)
     description = db.Column(db.String(255), nullable=True)
+    
+    # New fields for Goal Autopay
+    status = db.Column(db.String(20), default='SUCCESS') # SUCCESS, FAILED
+    source = db.Column(db.String(100), default='Dummy Bank')
+    destination = db.Column(db.String(100), default='Goal Wallet')
+    reason = db.Column(db.String(255), nullable=True)
+    remaining_balance = db.Column(db.Float, nullable=True)
+    current_balance = db.Column(db.Float, nullable=True)
+    
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
@@ -244,6 +254,12 @@ class GoalTransaction(db.Model):
             'type': self.type,
             'amount': self.amount,
             'description': self.description,
+            'status': self.status,
+            'source': self.source,
+            'destination': self.destination,
+            'reason': self.reason,
+            'remaining_balance': self.remaining_balance,
+            'current_balance': self.current_balance,
             'created_at': self.created_at.isoformat()
         }
 

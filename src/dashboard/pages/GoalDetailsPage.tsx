@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Target, Calendar, Clock, History, CreditCard, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Target, Calendar, Clock, History, CreditCard, ShoppingCart, Activity, Zap, CheckCircle2, XCircle } from 'lucide-react';
 import { api } from '../api';
 import FutureImpactSimulator from '../components/goals/FutureImpactSimulator';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -235,6 +235,71 @@ export default function GoalDetailsPage() {
 
                 </div>
             </div>
+            {/* Goal AutoPay Transaction History (Full Width) */}
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-bold text-lg font-heading text-gray-900 dark:text-white flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-indigo-500" /> Goal AutoPay History
+                    </h3>
+                    <span className="text-sm font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">Last 30 transactions</span>
+                </div>
+                
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-gray-100 dark:border-gray-800 text-xs uppercase tracking-wider text-gray-500">
+                                <th className="pb-4 font-semibold px-4">Date & Time</th>
+                                <th className="pb-4 font-semibold px-4">Goal Name</th>
+                                <th className="pb-4 font-semibold px-4 text-right">Amount</th>
+                                <th className="pb-4 font-semibold px-4 text-center">Status</th>
+                                <th className="pb-4 font-semibold px-4">Source</th>
+                                <th className="pb-4 font-semibold px-4 text-right">Remaining Goal</th>
+                                <th className="pb-4 font-semibold px-4 text-right">Current Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {transactions.filter((t: any) => t.type === 'GOAL_AUTOPAY').slice(0, 30).length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="text-center py-8 text-gray-500">No AutoPay transactions yet.</td>
+                                </tr>
+                            ) : (
+                                transactions.filter((t: any) => t.type === 'GOAL_AUTOPAY').slice(0, 30).map((t: any) => (
+                                    <tr key={t.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                        <td className="py-4 px-4 text-sm text-gray-900 dark:text-gray-300">
+                                            <div>{new Date(t.created_at).toLocaleDateString()}</div>
+                                            <div className="text-xs text-gray-400">{new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                        </td>
+                                        <td className="py-4 px-4 text-sm font-bold text-gray-900 dark:text-white">{goal.name}</td>
+                                        <td className="py-4 px-4 text-sm font-bold text-right text-gray-900 dark:text-white">₹{t.amount.toLocaleString()}</td>
+                                        <td className="py-4 px-4 text-center">
+                                            {t.status === 'SUCCESS' ? (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                                    <CheckCircle2 className="w-3 h-3" /> Success
+                                                </span>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                                                        <XCircle className="w-3 h-3" /> Failed
+                                                    </span>
+                                                    <span className="text-[10px] text-red-500 max-w-[120px] truncate" title={t.reason}>{t.reason}</span>
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="py-4 px-4 text-sm text-gray-500">{t.source || 'Dummy Bank'}</td>
+                                        <td className="py-4 px-4 text-sm font-medium text-right text-gray-500">
+                                            {t.remaining_balance != null ? `₹${t.remaining_balance.toLocaleString()}` : '-'}
+                                        </td>
+                                        <td className="py-4 px-4 text-sm font-bold text-right text-indigo-500">
+                                            {t.current_balance != null ? `₹${t.current_balance.toLocaleString()}` : '-'}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     );
 }

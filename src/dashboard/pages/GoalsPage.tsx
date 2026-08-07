@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target, Plus, TrendingUp, CheckCircle, PiggyBank, Calendar } from 'lucide-react';
+import { Target, Plus, TrendingUp, CheckCircle, PiggyBank, Calendar, AlertTriangle, Play, Pause, Edit3, Trash2 } from 'lucide-react';
 import { api } from '../api';
 import GoalCard from '../components/goals/GoalCard';
 import CreateGoalModal from '../components/goals/CreateGoalModal';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function GoalsPage() {
     const navigate = useNavigate();
@@ -12,6 +12,11 @@ export default function GoalsPage() {
     const [summary, setSummary] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    // Action Modal State
+    const [actionModal, setActionModal] = useState<{type: 'EDIT' | 'DELETE' | 'PAUSE' | null, goal: any}>({type: null, goal: null});
+    const [editName, setEditName] = useState('');
+    const [editTarget, setEditTarget] = useState('');
 
     useEffect(() => {
         fetchGoals();
@@ -39,23 +44,58 @@ export default function GoalsPage() {
         }
     };
 
-    const handleDeleteGoal = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this goal?')) return;
+    const handleDeleteGoal = (id: number) => {
+        const goal = goals.find(g => g.id === id);
+        if (goal) setActionModal({ type: 'DELETE', goal });
+    };
+
+    const handlePauseGoal = (goal: any) => {
+        setActionModal({ type: 'PAUSE', goal });
+    };
+
+    const handleEditGoal = (goal: any) => {
+        setEditName(goal.name);
+        setEditTarget(goal.target_amount.toString());
+        setActionModal({ type: 'EDIT', goal });
+    };
+
+    const handleRunAutopay = async (goalId: number) => {
         try {
-            await api.delete(`/api/goals/${id}`);
+            const data = await api.goals.runAutopay(goalId);
+            if (data.transaction && data.transaction.status === 'FAILED') {
+                alert(`AutoPay Failed: ${data.transaction.reason}`);
+            } else {
+                // Success - the fetchGoals will re-render and animations will play naturally 
+                // due to transition-all on the progress bar in GoalCard
+            }
+            fetchGoals();
+        } catch (error: any) {
+            alert(error.message || 'Failed to run AutoPay');
+            console.error(error);
+        }
+    };
+    
+    const confirmAction = async () => {
+        const { type, goal } = actionModal;
+        if (!goal) return;
+        
+        try {
+            if (type === 'DELETE') {
+                await api.delete(`/api/goals/${goal.id}`);
+            } else if (type === 'PAUSE') {
+                await api.put(`/api/goals/${goal.id}/status`, {});
+            } else if (type === 'EDIT') {
+                if (!editName || !editTarget) return;
+                await api.put(`/api/goals/${goal.id}`, { 
+                    name: editName, 
+                    target_amount: parseFloat(editTarget) 
+                });
+            }
+            setActionModal({ type: null, goal: null });
             fetchGoals();
         } catch (error) {
             console.error(error);
         }
-    };
-
-    const handlePauseGoal = async (goal: any) => {
-        // Mock pause for now, would need a PUT endpoint to update status
-        alert('Pause functionality coming soon. Need PUT endpoint for status update.');
-    };
-
-    const handleEditGoal = async (goal: any) => {
-        alert('Edit functionality coming soon.');
     };
 
     if (loading) {
@@ -159,6 +199,7 @@ export default function GoalsPage() {
                                         onEdit={handleEditGoal}
                                         onPause={handlePauseGoal}
                                         onDelete={handleDeleteGoal}
+                                        onRunAutopay={handleRunAutopay}
                                     />
                                 ))}
                             </div>
@@ -180,6 +221,7 @@ export default function GoalsPage() {
                                         onEdit={handleEditGoal}
                                         onPause={handlePauseGoal}
                                         onDelete={handleDeleteGoal}
+                                        onRunAutopay={handleRunAutopay}
                                     />
                                 ))}
                             </div>
@@ -220,9 +262,79 @@ export default function GoalsPage() {
 
             <CreateGoalModal 
                 isOpen={isCreateModalOpen} 
-                onClose={() => setIsCreateModalOpen(false)}
-                onSave={handleCreateGoal}
+                onClose={() => setIsCreateModalOpen(false)} 
+                onSave={handleCreateGoal} 
             />
+
+            {/* Custom Action Modal */}
+            {actionModal.type && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-2xl max-w-md w-full border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-200">
+                        {actionModal.type === 'DELETE' && (
+                            <>
+                                <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-500 mb-4">
+                                    <Trash2 className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-xl font-bold font-heading text-gray-900 dark:text-white mb-2">Delete Goal</h3>
+                                <p className="text-gray-500 dark:text-gray-400 mb-6">Are you sure you want to delete "{actionModal.goal.name}"? This action cannot be undone and will remove all tracking data for this goal.</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setActionModal({type: null, goal: null})} className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors">Cancel</button>
+                                    <button onClick={confirmAction} className="flex-1 py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20">Delete Goal</button>
+                                </div>
+                            </>
+                        )}
+                        {actionModal.type === 'PAUSE' && (
+                            <>
+                                <div className="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center text-yellow-500 mb-4">
+                                    {actionModal.goal.status === 'PAUSED' ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
+                                </div>
+                                <h3 className="text-xl font-bold font-heading text-gray-900 dark:text-white mb-2">{actionModal.goal.status === 'PAUSED' ? 'Resume Goal' : 'Pause Goal'}</h3>
+                                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                                    {actionModal.goal.status === 'PAUSED' 
+                                        ? `Are you sure you want to resume saving for "${actionModal.goal.name}"?` 
+                                        : `Are you sure you want to pause saving for "${actionModal.goal.name}"? Your progress will be saved.`}
+                                </p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setActionModal({type: null, goal: null})} className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors">Cancel</button>
+                                    <button onClick={confirmAction} className="flex-1 py-3 rounded-xl font-bold text-white bg-yellow-500 hover:bg-yellow-600 transition-colors shadow-lg shadow-yellow-500/20">Confirm</button>
+                                </div>
+                            </>
+                        )}
+                        {actionModal.type === 'EDIT' && (
+                            <>
+                                <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 mb-4">
+                                    <Edit3 className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-xl font-bold font-heading text-gray-900 dark:text-white mb-4">Edit Goal</h3>
+                                <div className="space-y-4 mb-6">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Goal Name</label>
+                                        <input 
+                                            type="text" 
+                                            value={editName}
+                                            onChange={(e) => setEditName(e.target.value)}
+                                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Target Amount (₹)</label>
+                                        <input 
+                                            type="number" 
+                                            value={editTarget}
+                                            onChange={(e) => setEditTarget(e.target.value)}
+                                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setActionModal({type: null, goal: null})} className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors">Cancel</button>
+                                    <button onClick={confirmAction} className="flex-1 py-3 rounded-xl font-bold text-white gradient-bg hover:shadow-lg hover:shadow-indigo-500/30 transition-all">Save Changes</button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
