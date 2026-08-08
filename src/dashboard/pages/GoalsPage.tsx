@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target, Plus, TrendingUp, CheckCircle, PiggyBank, Calendar, AlertTriangle, Play, Pause, Edit3, Trash2 } from 'lucide-react';
+import { Target, Plus, TrendingUp, CheckCircle, PiggyBank, Calendar, AlertTriangle, Play, Pause, Edit3, Trash2, Search, X } from 'lucide-react';
 import { api } from '../api';
 import GoalCard from '../components/goals/GoalCard';
 import CreateGoalModal from '../components/goals/CreateGoalModal';
@@ -13,10 +13,15 @@ export default function GoalsPage() {
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
+    // Search and Filter State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Paused' | 'Completed'>('All');
+
     // Action Modal State
     const [actionModal, setActionModal] = useState<{type: 'EDIT' | 'DELETE' | 'PAUSE' | null, goal: any}>({type: null, goal: null});
     const [editName, setEditName] = useState('');
     const [editTarget, setEditTarget] = useState('');
+    const [editDescription, setEditDescription] = useState('');
 
     useEffect(() => {
         fetchGoals();
@@ -56,6 +61,7 @@ export default function GoalsPage() {
     const handleEditGoal = (goal: any) => {
         setEditName(goal.name);
         setEditTarget(goal.target_amount.toString());
+        setEditDescription(goal.description || '');
         setActionModal({ type: 'EDIT', goal });
     };
 
@@ -88,7 +94,8 @@ export default function GoalsPage() {
                 if (!editName || !editTarget) return;
                 await api.put(`/api/goals/${goal.id}`, { 
                     name: editName, 
-                    target_amount: parseFloat(editTarget) 
+                    target_amount: parseFloat(editTarget),
+                    description: editDescription
                 });
             }
             setActionModal({ type: null, goal: null });
@@ -102,10 +109,19 @@ export default function GoalsPage() {
         return <div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>;
     }
 
-    const activeGoals = goals.filter(g => g.status !== 'COMPLETED');
-    const completedGoals = goals.filter(g => g.status === 'COMPLETED');
+    const filteredGoals = goals.filter(g => {
+        if (searchQuery && !g.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+        if (statusFilter === 'Active' && g.status !== 'ACTIVE') return false;
+        if (statusFilter === 'Paused' && g.status !== 'PAUSED') return false;
+        if (statusFilter === 'Completed' && g.status !== 'COMPLETED') return false;
+        return true;
+    });
 
-    const chartData = activeGoals.map(g => ({
+    const activeGoals = filteredGoals.filter(g => g.status !== 'COMPLETED');
+    const completedGoals = filteredGoals.filter(g => g.status === 'COMPLETED');
+    const isFiltering = searchQuery !== '' || statusFilter !== 'All';
+
+    const chartData = goals.filter(g => g.status !== 'COMPLETED').map(g => ({
         name: g.name,
         Saved: g.saved_amount,
         Remaining: g.target_amount - g.saved_amount
@@ -175,57 +191,115 @@ export default function GoalsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column - Goals List */}
                 <div className="lg:col-span-2 space-y-8">
-                    {/* Active Goals */}
-                    <div>
-                        <h2 className="text-xl font-bold font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                            <Target className="w-5 h-5 text-indigo-500" /> Active Goals
-                        </h2>
-                        {activeGoals.length === 0 ? (
-                            <div className="bg-white dark:bg-gray-900 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
-                                <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🎯</div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No active goals yet</h3>
-                                <p className="text-gray-500 dark:text-gray-400 mb-6">Start saving for your dreams today.</p>
-                                <button onClick={() => setIsCreateModalOpen(true)} className="px-6 py-2.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-xl font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
-                                    Create First Goal
+                    {/* Search and Filter */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <Search className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search goals..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="block w-full pl-11 pr-10 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
+                            />
+                            {searchQuery && (
+                                <button 
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                >
+                                    <X className="h-5 w-5" />
                                 </button>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {activeGoals.map(goal => (
-                                    <GoalCard 
-                                        key={goal.id} 
-                                        goal={goal} 
-                                        onView={(id: any) => navigate(`/dashboard/goals/${id}`)}
-                                        onEdit={handleEditGoal}
-                                        onPause={handlePauseGoal}
-                                        onDelete={handleDeleteGoal}
-                                        onRunAutopay={handleRunAutopay}
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Completed Goals */}
-                    {completedGoals.length > 0 && (
-                        <div>
-                            <h2 className="text-xl font-bold font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                                <CheckCircle className="w-5 h-5 text-green-500" /> Completed Goals
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {completedGoals.map(goal => (
-                                    <GoalCard 
-                                        key={goal.id} 
-                                        goal={goal} 
-                                        onView={(id: any) => navigate(`/dashboard/goals/${id}`)}
-                                        onEdit={handleEditGoal}
-                                        onPause={handlePauseGoal}
-                                        onDelete={handleDeleteGoal}
-                                        onRunAutopay={handleRunAutopay}
-                                    />
-                                ))}
+                            )}
+                        </div>
+                        <div className="sm:w-48 relative">
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value as any)}
+                                className="block w-full pl-4 pr-10 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm appearance-none"
+                            >
+                                <option value="All">All</option>
+                                <option value="Active">Active</option>
+                                <option value="Paused">Paused</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
+                                <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                </svg>
                             </div>
                         </div>
+                    </div>
+
+                    {isFiltering && filteredGoals.length === 0 ? (
+                        <div className="bg-white dark:bg-gray-900 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
+                            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                                <Search className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No goals found</h3>
+                            <p className="text-gray-500 dark:text-gray-400">Try a different search term or status filter.</p>
+                            <button onClick={() => { setSearchQuery(''); setStatusFilter('All'); }} className="mt-6 px-6 py-2.5 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                                Clear Filters
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Active Goals */}
+                            {(activeGoals.length > 0 || !isFiltering) && (
+                                <div>
+                                    <h2 className="text-xl font-bold font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                                        <Target className="w-5 h-5 text-indigo-500" /> Active Goals
+                                    </h2>
+                                    {activeGoals.length === 0 && !isFiltering ? (
+                                        <div className="bg-white dark:bg-gray-900 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
+                                            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🎯</div>
+                                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No active goals yet</h3>
+                                            <p className="text-gray-500 dark:text-gray-400 mb-6">Start saving for your dreams today.</p>
+                                            <button onClick={() => setIsCreateModalOpen(true)} className="px-6 py-2.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-xl font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
+                                                Create First Goal
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {activeGoals.map(goal => (
+                                                <GoalCard 
+                                                    key={goal.id} 
+                                                    goal={goal} 
+                                                    onView={(id: any) => navigate(`/dashboard/goals/${id}`)}
+                                                    onEdit={handleEditGoal}
+                                                    onPause={handlePauseGoal}
+                                                    onDelete={handleDeleteGoal}
+                                                    onRunAutopay={handleRunAutopay}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Completed Goals */}
+                            {completedGoals.length > 0 && (
+                                <div>
+                                    <h2 className="text-xl font-bold font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                                        <CheckCircle className="w-5 h-5 text-green-500" /> Completed Goals
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {completedGoals.map(goal => (
+                                            <GoalCard 
+                                                key={goal.id} 
+                                                goal={goal} 
+                                                onView={(id: any) => navigate(`/dashboard/goals/${id}`)}
+                                                onEdit={handleEditGoal}
+                                                onPause={handlePauseGoal}
+                                                onDelete={handleDeleteGoal}
+                                                onRunAutopay={handleRunAutopay}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
 
@@ -235,7 +309,7 @@ export default function GoalsPage() {
                         <h3 className="font-bold text-lg font-heading mb-6 text-gray-900 dark:text-white flex items-center gap-2">
                             <TrendingUp className="w-5 h-5 text-indigo-500" /> Progress Overview
                         </h3>
-                        {activeGoals.length > 0 ? (
+                        {chartData.length > 0 ? (
                             <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -323,6 +397,16 @@ export default function GoalsPage() {
                                             value={editTarget}
                                             onChange={(e) => setEditTarget(e.target.value)}
                                             className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Notes / Description</label>
+                                        <textarea 
+                                            value={editDescription}
+                                            onChange={(e) => setEditDescription(e.target.value)}
+                                            placeholder="Add a note about this goal..."
+                                            rows={3}
+                                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
                                         />
                                     </div>
                                 </div>

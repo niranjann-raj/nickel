@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Target, Calendar, Clock, History, CreditCard, ShoppingCart, Activity, Zap, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Target, Calendar, Clock, History, CreditCard, ShoppingCart, Activity, Zap, CheckCircle2, XCircle, FileText, Download } from 'lucide-react';
 import { api } from '../api';
+import { generateGoalSummaryPDF } from '../../utils/pdfGenerator';
 import FutureImpactSimulator from '../components/goals/FutureImpactSimulator';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -10,6 +11,25 @@ export default function GoalDetailsPage() {
     const navigate = useNavigate();
     const [goalData, setGoalData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [isExporting, setIsExporting] = useState(false);
+    const [exportMessage, setExportMessage] = useState<{type: 'success'|'error', text: string} | null>(null);
+
+    const handleExport = () => {
+        setIsExporting(true);
+        setExportMessage(null);
+        setTimeout(() => {
+            try {
+                generateGoalSummaryPDF(goalData);
+                setExportMessage({ type: 'success', text: 'Goal summary exported successfully.' });
+            } catch (err) {
+                console.error(err);
+                setExportMessage({ type: 'error', text: 'Unable to generate the goal summary. Please try again.' });
+            } finally {
+                setIsExporting(false);
+                setTimeout(() => setExportMessage(null), 3000);
+            }
+        }, 300);
+    };
 
     const fetchGoal = async () => {
         try {
@@ -60,13 +80,34 @@ export default function GoalDetailsPage() {
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-12">
             {/* Header / Back */}
-            <div className="flex items-center gap-4">
-                <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-indigo-500 transition-colors">
-                    <ArrowLeft className="w-5 h-5" />
-                </button>
-                <h1 className="text-2xl font-bold font-heading text-gray-900 dark:text-white flex items-center gap-3">
-                    Goal Details
-                </h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center gap-4">
+                    <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-indigo-500 transition-colors">
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <h1 className="text-2xl font-bold font-heading text-gray-900 dark:text-white flex items-center gap-3">
+                        Goal Details
+                    </h1>
+                </div>
+                <div className="flex items-center gap-3">
+                    {exportMessage && (
+                        <span className={`text-sm font-semibold ${exportMessage.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
+                            {exportMessage.text}
+                        </span>
+                    )}
+                    <button 
+                        onClick={handleExport}
+                        disabled={isExporting}
+                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    >
+                        {isExporting ? (
+                            <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <Download className="w-4 h-4" />
+                        )}
+                        {isExporting ? 'Generating PDF...' : 'Export Goal Summary'}
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

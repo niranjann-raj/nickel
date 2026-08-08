@@ -163,6 +163,8 @@ def edit_goal(goal_id):
             goal.target_amount = float(data['target_amount'])
         except ValueError:
             pass
+    if 'description' in data:
+        goal.description = data['description']
             
     db.session.commit()
     return jsonify({'message': 'Goal updated', 'goal': goal.to_dict()}), 200
