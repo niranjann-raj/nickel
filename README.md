@@ -1,4 +1,4 @@
-# nickel
+# nickel - Turn Saving Money Into a Game
 
 ### AI-Powered Goal-Based Savings & Financial Intelligence Platform
 
@@ -544,8 +544,6 @@ Rather than simply showing users where their money went, Nickel helps them under
 Where they want their money to go — and how to get there.
 
 # 👥 Team
-
-### Team Nickel
 
 - **Niranjan Raj**
 - **Anmol Vishisht**
