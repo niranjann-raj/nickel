@@ -20,7 +20,7 @@ export default function TransactionHistoryCard() {
     useEffect(() => {
         fetchTransactions();
         // Polling to keep it updated when simulations happen
-        const interval = setInterval(fetchTransactions, 3000); 
+        const interval = setInterval(fetchTransactions, 3000);
         return () => clearInterval(interval);
     }, []);
 
@@ -46,7 +46,7 @@ export default function TransactionHistoryCard() {
                         <div key={tx.id} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-colors">
                             <div className="flex items-center gap-3">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.type === 'CREDIT' ? 'bg-green-50 text-green-600 dark:bg-green-900/20' : 'bg-red-50 text-red-600 dark:bg-red-900/20'}`}>
-                                    {tx.type === 'CREDIT' ? <ArrowDownLeft className="w-5 h-5"/> : <ArrowUpRight className="w-5 h-5"/>}
+                                    {tx.type === 'CREDIT' ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
                                 </div>
                                 <div className="max-w-[200px] sm:max-w-xs">
                                     <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{tx.description}</p>

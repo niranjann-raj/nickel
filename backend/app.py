@@ -13,6 +13,7 @@ from routes.dashboard import dashboard_bp
 from routes.bank import bank_bp
 from routes.autopay import autopay_bp
 from routes.goals import goals_bp
+from routes.gamification import gamification_bp
 from scheduler import start_scheduler
 
 def create_app():
@@ -36,6 +37,7 @@ def create_app():
     app.register_blueprint(bank_bp, url_prefix='/api/bank')
     app.register_blueprint(autopay_bp, url_prefix='/api/autopay')
     app.register_blueprint(goals_bp, url_prefix='/api/goals')
+    app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
 
     # Create tables
     with app.app_context():

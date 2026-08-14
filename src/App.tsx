@@ -28,6 +28,7 @@ import SettingsPage from './dashboard/pages/SettingsPage';
 import ShopPage from './dashboard/pages/ShopPage';
 import GoalsPage from './dashboard/pages/GoalsPage';
 import GoalDetailsPage from './dashboard/pages/GoalDetailsPage';
+import SpinPage from './dashboard/pages/SpinPage';
 
 function LandingPage() {
     useEffect(() => {
@@ -85,6 +86,7 @@ function App() {
                     <Route path="coins" element={<CoinsPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="shop" element={<ShopPage />} />
+                    <Route path="spin" element={<SpinPage />} />
                     <Route path="goals" element={<GoalsPage />} />
                     <Route path="goals/:id" element={<GoalDetailsPage />} />
                 </Route>

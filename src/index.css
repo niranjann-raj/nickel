@@ -41,53 +41,59 @@
    ============================================================ */
 html.dark body,
 html.dark #root {
-  background-color: #111827;
-  color: #f3f4f6;
+  background-color: #050505;
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(245, 158, 11, 0.03) 0%, transparent 50%);
+  color: #e5e5e5;
 }
 
 /* Navbar */
 html.dark nav {
-  background: rgba(17, 24, 39, 0.85) !important;
-  border-color: rgba(55, 65, 81, 0.5) !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  border-color: rgba(38, 38, 38, 0.5) !important;
 }
 
 html.dark nav a,
 html.dark nav span {
-  color: #d1d5db;
+  color: #d4d4d8;
 }
 
 /* Cards and sections */
 html.dark section {
-  background-color: #111827;
+  background-color: transparent;
 }
 
 html.dark .bg-gray-50 {
-  background-color: #1f2937 !important;
+  background-color: #09090b !important;
 }
 
 html.dark .bg-white {
-  background-color: #1f2937 !important;
+  background-color: #0a0a0a !important;
 }
 
 html.dark h1,
 html.dark h2,
 html.dark h3,
 html.dark h4 {
-  color: #f9fafb;
+  color: #ffffff;
 }
 
 html.dark p {
-  color: #9ca3af;
+  color: #a3a3a3;
 }
 
 html.dark .card-glow {
-  border-color: rgba(55, 65, 81, 0.5);
-  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.15), 0 8px 32px rgba(0, 0, 0, 0.4);
+  background: rgba(18, 18, 20, 0.7) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0px 4px 24px -1px rgba(0, 0, 0, 0.5), inset 0px 1px 0px rgba(255, 255, 255, 0.05);
 }
 
 /* Override the App.tsx wrapper */
 html.dark [class*="bg-white"] {
-  background-color: #1f2937;
+  background-color: #09090b;
 }
 
 
@@ -112,13 +118,24 @@ html.dark [class*="bg-white"] {
   }
 
   .card-glow {
-    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.1), 0 8px 32px rgba(99, 102, 241, 0.12);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .card-glow:hover {
-    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2), 0 16px 48px rgba(99, 102, 241, 0.22);
-    transform: translateY(-4px);
+    box-shadow: 0px 8px 32px -4px rgba(0, 0, 0, 0.6), inset 0px 1px 0px rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-panel-hover:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.1);
   }
 
   .nav-blur {
@@ -221,11 +238,11 @@ html.dark [class*="bg-white"] {
   .video-theme {
     background-color: transparent !important;
   }
-  
+
   .video-theme section {
     background: transparent !important;
   }
-  
+
   /* Convert all light backgrounds/cards to dark glassmorphism */
   .video-theme .bg-white,
   .video-theme .bg-gray-50,

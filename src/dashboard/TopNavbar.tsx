@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Menu, Moon, Sun, Bell, Gift, CheckCircle, Trophy, Sparkles } from 'lucide-react';
+import { Menu, Moon, Sun, Bell, Gift, CheckCircle, Trophy, Sparkles, Shield, Flame, Zap, IndianRupee, Star } from 'lucide-react';
 import { useDashboard } from './DashboardLayout';
 
 interface TopNavbarProps {
@@ -14,6 +14,15 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
     const [showNotifs, setShowNotifs] = useState(false);
     const notifRef = useRef<HTMLDivElement>(null);
 
+    const getLifetimeXP = () => {
+        if (!user) return 0;
+        let total = user.xp;
+        for (let i = 1; i < user.level; i++) {
+            total += 1000 + (i - 1) * 500;
+        }
+        return total;
+    };
+
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
@@ -25,7 +34,7 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
     }, []);
 
     return (
-        <header className="h-20 flex items-center justify-between px-6 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex-shrink-0">
+        <header className="h-20 flex items-center justify-between px-6 border-b border-gray-100 dark:border-white/5 bg-white/80 dark:bg-[#050505]/40 backdrop-blur-2xl flex-shrink-0 z-10 relative">
             <div className="flex items-center gap-4">
                 <button
                     onClick={onMenuClick}
@@ -42,6 +51,35 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
             </div>
 
             <div className="flex items-center gap-3">
+                
+                {/* Stats Row */}
+                {user && (
+                    <div className="hidden md:flex items-center gap-2 mr-2 glass-panel p-1.5 rounded-2xl">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold text-sm border border-transparent dark:border-orange-500/20 shadow-sm" title="Current Streak">
+                            <Flame className="w-4 h-4" />
+                            <span>{user.current_streak || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 font-bold text-sm border border-transparent dark:border-yellow-500/20 shadow-sm" title="Available Coins">
+                            <Zap className="w-4 h-4" />
+                            <span>{(user.coins || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 font-bold text-sm border border-transparent dark:border-teal-500/20 shadow-sm" title="Total Saved">
+                            <IndianRupee className="w-4 h-4" />
+                            <span>{(user.total_saved || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-sm border border-transparent dark:border-indigo-500/20 shadow-sm" title="Lifetime XP">
+                            <Star className="w-4 h-4" />
+                            <span>XP {getLifetimeXP().toLocaleString()}</span>
+                        </div>
+                        {user.streak_shields > 0 && (
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-sm border border-transparent dark:border-blue-500/20 shadow-sm" title="Streak Shields Available">
+                                <Shield className="w-4 h-4" />
+                                <span>{user.streak_shields}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div className="relative" ref={notifRef}>
                     <button 
                         onClick={() => setShowNotifs(!showNotifs)}
@@ -55,11 +93,11 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
 
                     {/* Notification Dropdown */}
                     {showNotifs && (
-                        <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-gray-900 rounded-2xl shadow-xl shadow-indigo-500/10 border border-gray-100 dark:border-gray-800 overflow-hidden z-50 transform origin-top-right transition-all">
-                            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50">
+                        <div className="absolute right-0 mt-3 w-80 glass-panel rounded-2xl shadow-fintech overflow-hidden z-50 transform origin-top-right transition-all">
+                            <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gray-50/50 dark:bg-[#050505]/50">
                                 <h3 className="font-bold text-sm text-gray-900 dark:text-white">Notifications</h3>
                                 {notifications.length > 0 && (
-                                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded-full">
+                                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
                                         {notifications.length} New
                                     </span>
                                 )}
@@ -112,12 +150,12 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
 
                 <button
                     onClick={onToggleTheme}
-                    className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
                 >
                     {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                 </button>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-md shadow-indigo-500/20 cursor-default ring-2 ring-indigo-500/20 overflow-hidden bg-gray-100 dark:bg-gray-800">
-                    <img src={user?.avatar || '/game_avatar.png'} alt="Avatar" className="w-full h-full object-cover" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-fintech cursor-default overflow-hidden bg-gray-100 dark:bg-[#121214] border border-gray-200 dark:border-white/10 relative group">
+                    <img src={user?.avatar || '/game_avatar.png'} alt="Avatar" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
                 </div>
             </div>
         </header>

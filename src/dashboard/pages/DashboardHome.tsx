@@ -40,35 +40,16 @@ export default function DashboardHome() {
     return (
         <div className="space-y-6 max-w-[1400px] mx-auto pb-8">
             {/* Header Area */}
-            <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center border border-indigo-100 dark:border-indigo-900/50">
-                    <Activity className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <div>
-                    <h2 className="font-heading font-black text-2xl text-gray-900 dark:text-white leading-tight">Dashboard Overview</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Track your progress, streaks, and financial growth</p>
-                </div>
+            <div className="mb-8">
+                <h2 className="font-heading font-bold text-4xl text-gray-900 dark:text-white tracking-tight">
+                    Financial Overview
+                </h2>
+                <p className="text-gray-500 dark:text-gray-400 mt-2 text-lg">
+                    Track your progress, streaks, and financial growth.
+                </p>
             </div>
 
-            {/* Top KPI Row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map(({ icon: Icon, label, value, color, bg }) => (
-                    <div key={label} className="bg-white dark:bg-gray-900 rounded-[24px] p-5 border border-gray-100 dark:border-gray-800 flex flex-col justify-center gap-3 card-glow transition-transform hover:-translate-y-1 relative overflow-hidden group">
-                        {/* Decorative background circle */}
-                        <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-20 transition-transform group-hover:scale-110 ${bg}`} />
-                        
-                        <div className="flex items-center gap-4 relative z-10">
-                            <div className={`w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-2xl ${bg}`}>
-                                <Icon className={`w-6 h-6 ${color}`} />
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-0.5 uppercase tracking-wider">{label}</p>
-                                <p className="font-heading font-black text-2xl text-gray-900 dark:text-white leading-none">{value}</p>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+
 
             {/* Main Content Grid: 60/40 Split */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">

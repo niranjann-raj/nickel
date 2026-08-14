@@ -29,6 +29,8 @@ class User(db.Model):
     age = db.Column(db.Integer, nullable=True)
     phone = db.Column(db.String(20), nullable=True)
     city = db.Column(db.String(100), nullable=True)
+    streak_shields = db.Column(db.Integer, default=0)
+    unlocked_avatars = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
@@ -55,9 +57,19 @@ class User(db.Model):
             'age': self.age,
             'phone': self.phone,
             'city': self.city,
+            'streak_shields': self.streak_shields,
+            'unlocked_avatars': self.unlocked_avatars,
         }
 
-
+class DailySpin(db.Model):
+    __tablename__ = 'daily_spins'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    date = db.Column(db.Date, default=lambda: date.today(), nullable=False)
+    time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    reward = db.Column(db.String(255), nullable=False)
+    reward_type = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 class OtpToken(db.Model):
     __tablename__ = 'otp_tokens'
     id = db.Column(db.Integer, primary_key=True)

@@ -16,6 +16,9 @@ const AVATAR_PRESETS = [
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Leo&backgroundColor=c0aede'
 ];
 
+const PHANTOM_AVATAR = '/phantom.jpg';
+
+
 export default function SettingsPage() {
     const { user, refreshUser, addNotification } = useDashboard();
     const [form, setForm] = useState({ full_name: '', age: '', phone: '', city: '' });
@@ -164,31 +167,54 @@ export default function SettingsPage() {
                 <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
                     <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Choose Your Avatar</h3>
                     <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                        {AVATAR_PRESETS.map((preset, idx) => {
-                            const isSelected = preset === (user?.avatar || '/game_avatar.png');
-                            return (
-                                <button
-                                    key={idx}
-                                    type="button"
-                                    disabled={savingAvatar}
-                                    onClick={() => handleAvatarSelect(preset)}
-                                    className={`w-full aspect-square rounded-2xl overflow-hidden border-2 transition-all p-1 bg-gray-50 dark:bg-gray-800/50 hover:scale-105 ${
-                                        isSelected 
-                                            ? 'border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]' 
-                                            : 'border-transparent hover:border-indigo-300 dark:hover:border-indigo-700'
-                                    }`}
-                                >
-                                    <div className="w-full h-full rounded-xl overflow-hidden bg-white/50 dark:bg-black/20 relative flex items-center justify-center">
-                                        <img src={preset} alt="preset" className="w-full h-full object-cover" />
-                                        {isSelected && (
-                                            <div className="absolute inset-x-0 bottom-0 bg-indigo-500 text-[9px] text-white font-black uppercase py-0.5 z-10 text-center">
-                                                Eqpd
-                                            </div>
-                                        )}
-                                    </div>
-                                </button>
-                            );
-                        })}
+                        {(() => {
+                            const availableAvatars = [...AVATAR_PRESETS];
+                            const premiumMap: Record<string, string> = {
+                                'NICKEL_PHANTOM': '/phantom.jpg',
+                                'ninja': '/ninja.jpg',
+                                'alien': '/alien.jpg',
+                                'spartan': '/spartan.jpg',
+                                'god_of_war': '/god_of_war.jpg'
+                            };
+                            
+                            if (user?.unlocked_avatars) {
+                                const unlockedList = user.unlocked_avatars.split(',');
+                                unlockedList.forEach(id => {
+                                    if (premiumMap[id]) availableAvatars.push(premiumMap[id]);
+                                });
+                            }
+                            return availableAvatars.map((preset, idx) => {
+                                const isSelected = preset === (user?.avatar || '/game_avatar.png');
+                                const isLegendary = preset === PHANTOM_AVATAR || preset === '/god_of_war.jpg';
+                                return (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        disabled={savingAvatar}
+                                        onClick={() => handleAvatarSelect(preset)}
+                                        className={`w-full aspect-square rounded-2xl overflow-hidden border-2 transition-all p-1 bg-gray-50 dark:bg-gray-800/50 hover:scale-105 ${
+                                            isSelected 
+                                                ? (isLegendary ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' : 'border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]') 
+                                                : (isLegendary ? 'border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'border-transparent hover:border-indigo-300 dark:hover:border-indigo-700')
+                                        }`}
+                                    >
+                                        <div className="w-full h-full rounded-xl overflow-hidden bg-white/50 dark:bg-black/20 relative flex items-center justify-center">
+                                            <img src={preset} alt="preset" className="w-full h-full object-cover" />
+                                            {isLegendary && !isSelected && (
+                                                <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[8px] font-bold px-1 rounded-bl-lg">
+                                                    LEGENDARY
+                                                </div>
+                                            )}
+                                            {isSelected && (
+                                                <div className={`absolute inset-x-0 bottom-0 text-[9px] text-white font-black uppercase py-0.5 z-10 text-center ${isLegendary ? 'bg-emerald-500' : 'bg-indigo-500'}`}>
+                                                    Eqpd
+                                                </div>
+                                            )}
+                                        </div>
+                                    </button>
+                                );
+                            });
+                        })()}
                     </div>
                 </div>
             </div>

@@ -12,7 +12,7 @@ export default function GoalDetailsPage() {
     const [goalData, setGoalData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
-    const [exportMessage, setExportMessage] = useState<{type: 'success'|'error', text: string} | null>(null);
+    const [exportMessage, setExportMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     const handleExport = () => {
         setIsExporting(true);
@@ -65,7 +65,7 @@ export default function GoalDetailsPage() {
     const chartData = ascTransactions.filter(t => t.type === 'CREDIT').map(t => {
         cumulative += t.amount;
         return {
-            date: new Date(t.created_at).toLocaleDateString(undefined, {month:'short', day:'numeric'}),
+            date: new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
             Saved: cumulative
         };
     });
@@ -95,7 +95,7 @@ export default function GoalDetailsPage() {
                             {exportMessage.text}
                         </span>
                     )}
-                    <button 
+                    <button
                         onClick={handleExport}
                         disabled={isExporting}
                         className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
@@ -113,18 +113,18 @@ export default function GoalDetailsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column - Details & Timeline */}
                 <div className="lg:col-span-2 space-y-8">
-                    
+
                     {/* Goal Header Card */}
                     <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-8 shadow-sm flex flex-col md:flex-row gap-8 items-center md:items-start relative overflow-hidden">
                         {goal.status === 'COMPLETED' && <div className="absolute top-0 left-0 right-0 h-2 bg-green-500" />}
-                        
+
                         <div className="w-24 h-24 rounded-3xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-5xl shadow-inner flex-shrink-0">
                             {goal.icon}
                         </div>
                         <div className="flex-1 text-center md:text-left">
                             <h2 className="text-3xl font-bold font-heading text-gray-900 dark:text-white mb-2">{goal.name}</h2>
                             <p className="text-gray-500 dark:text-gray-400 mb-6">{goal.description || 'Saving for your dreams.'}</p>
-                            
+
                             <div className="flex flex-wrap justify-center md:justify-start gap-8">
                                 <div>
                                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Target</p>
@@ -146,7 +146,7 @@ export default function GoalDetailsPage() {
                                     <span className="text-gray-500">₹{(goal.target_amount - goal.saved_amount).toLocaleString()} left</span>
                                 </div>
                                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
-                                    <div 
+                                    <div
                                         className={`h-full rounded-full transition-all duration-1000 ${goal.status === 'COMPLETED' ? 'bg-green-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'}`}
                                         style={{ width: `${progressCapped}%` }}
                                     />
@@ -166,7 +166,7 @@ export default function GoalDetailsPage() {
                                     <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.2} />
                                         <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                                        <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val/1000}k`} />
+                                        <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val / 1000}k`} />
                                         <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                                         <Line type="monotone" dataKey="Saved" stroke="#6366f1" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#6366f1' }} />
                                     </LineChart>
@@ -204,9 +204,9 @@ export default function GoalDetailsPage() {
                         <h3 className="font-bold text-lg font-heading mb-6 text-gray-900 dark:text-white flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-indigo-500" /> Completion Timeline
                         </h3>
-                        
+
                         <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200 dark:before:bg-gray-800">
-                            
+
                             {/* Original */}
                             <div className="relative">
                                 <div className="absolute -left-[31px] bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 w-4 h-4 rounded-full"></div>
@@ -224,7 +224,7 @@ export default function GoalDetailsPage() {
                                     <p className="text-lg font-bold text-gray-900 dark:text-white">{new Date(dh.new_completion_date).toLocaleDateString()}</p>
                                 </div>
                             ))}
-                            
+
                             {/* Current */}
                             <div className="relative">
                                 <div className="absolute -left-[31px] bg-white dark:bg-gray-900 border-2 border-indigo-500 w-4 h-4 rounded-full"></div>
@@ -239,7 +239,7 @@ export default function GoalDetailsPage() {
 
                 {/* Right Column - Simulator & History */}
                 <div className="space-y-6">
-                    
+
                     {goal.status !== 'COMPLETED' && (
                         <FutureImpactSimulator goal={goal} onDecision={fetchGoal} />
                     )}
@@ -249,7 +249,7 @@ export default function GoalDetailsPage() {
                         <h3 className="font-bold text-lg font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
                             <History className="w-5 h-5 text-indigo-500" /> Recent Activity
                         </h3>
-                        
+
                         <div className="space-y-4">
                             {transactions.length === 0 ? (
                                 <p className="text-sm text-gray-500 text-center py-4">No activity yet.</p>
@@ -284,7 +284,7 @@ export default function GoalDetailsPage() {
                     </h3>
                     <span className="text-sm font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">Last 30 transactions</span>
                 </div>
-                
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>

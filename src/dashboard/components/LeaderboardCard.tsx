@@ -22,16 +22,17 @@ export default function LeaderboardCard() {
     };
 
     return (
-        <div className="bg-white dark:bg-gray-900 rounded-[24px] p-6 border border-gray-100 dark:border-gray-800 card-glow">
-            <div className="flex items-center gap-3 mb-5">
-                <div className="w-11 h-11 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl flex items-center justify-center">
-                    <Trophy className="w-6 h-6 text-yellow-500" />
+        <div className="glass-panel card-glow rounded-[24px] p-8 border border-gray-100 dark:border-white/5 relative overflow-hidden">
+            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-yellow-500/10 rounded-full blur-[60px]" />
+            <div className="flex items-center gap-4 mb-6 relative z-10">
+                <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-500/10 rounded-2xl flex items-center justify-center border border-yellow-100 dark:border-yellow-500/20 shadow-sm">
+                    <Trophy className="w-6 h-6 text-yellow-500 dark:text-yellow-400" />
                 </div>
                 <div>
-                    <h3 className="font-heading font-bold text-lg text-gray-900 dark:text-white">Season Leaderboard</h3>
-                    <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">Season {data?.season || 1} • Resets Sunday</p>
-                        {data?.your_rank && <p className="text-xs text-gray-500">Rank: <span className="text-indigo-500 font-bold">#{data.your_rank}</span></p>}
+                    <h3 className="font-heading font-bold text-xl text-gray-900 dark:text-white tracking-tight">Season Leaderboard</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest bg-gray-100 dark:bg-[#121214] px-2.5 py-0.5 rounded-full border border-transparent dark:border-white/5">Season {data?.season || 1} • Resets Sunday</p>
+                        {data?.your_rank && <p className="text-xs text-gray-500 font-medium">Rank: <span className="text-indigo-400 font-bold">#{data.your_rank}</span></p>}
                     </div>
                 </div>
             </div>
@@ -55,23 +56,23 @@ export default function LeaderboardCard() {
             )}
 
             {/* Rank list */}
-            <div className="space-y-2">
+            <div className="space-y-2 relative z-10">
                 {[...top3, ...rest].map((entry: any) => (
                     <div
                         key={entry.rank}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${entry.is_current_user
-                                ? 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50'
-                                : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${entry.is_current_user
+                                ? 'bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 shadow-[inset_0_0_15px_rgba(99,102,241,0.1)]'
+                                : 'border border-transparent hover:bg-gray-50 dark:hover:bg-white/5'
                             }`}
                     >
                         <div className="w-6 flex justify-center">{rankIcon(entry.rank)}</div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                                {entry.name} {entry.is_current_user && <span className="text-xs text-indigo-500">(you)</span>}
+                                {entry.name} {entry.is_current_user && <span className="text-xs text-indigo-500 ml-1">(you)</span>}
                             </p>
                         </div>
                         <div className="text-right flex-shrink-0">
-                            <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{entry.xp.toLocaleString()} XP</p>
+                            <p className="text-[13px] font-bold text-indigo-600 dark:text-indigo-400">{entry.xp.toLocaleString()} XP</p>
                         </div>
                     </div>
                 ))}

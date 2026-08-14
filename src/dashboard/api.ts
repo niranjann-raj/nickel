@@ -45,5 +45,9 @@ export const api = {
     },
     goals: {
         runAutopay: (goalId: number) => apiFetch(`/api/goals/${goalId}/autopay/run`, { method: 'POST' }),
+    },
+    gamification: {
+        spinStatus: () => apiFetch('/api/gamification/spin/status', { method: 'GET' }),
+        spinWheel: () => apiFetch('/api/gamification/spin', { method: 'POST' }),
     }
 };

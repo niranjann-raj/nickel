@@ -16,6 +16,8 @@ interface UserProfile {
     current_streak: number;
     total_saved: number;
     avatar?: string;
+    streak_shields: number;
+    unlocked_avatars: string;
 }
 
 export interface AppNotification {
@@ -109,7 +111,7 @@ export default function DashboardLayout() {
 
     return (
         <DashboardContext.Provider value={{ user, refreshUser: fetchUser, loading, notifications, addNotification, clearNotifications }}>
-            <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-body">
+            <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-transparent text-gray-900 dark:text-gray-100 font-body">
                 <Sidebar />
 
                 <div className="flex-1 flex flex-col overflow-hidden">

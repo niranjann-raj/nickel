@@ -18,7 +18,7 @@ export default function GoalsPage() {
     const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Paused' | 'Completed'>('All');
 
     // Action Modal State
-    const [actionModal, setActionModal] = useState<{type: 'EDIT' | 'DELETE' | 'PAUSE' | null, goal: any}>({type: null, goal: null});
+    const [actionModal, setActionModal] = useState<{ type: 'EDIT' | 'DELETE' | 'PAUSE' | null, goal: any }>({ type: null, goal: null });
     const [editName, setEditName] = useState('');
     const [editTarget, setEditTarget] = useState('');
     const [editDescription, setEditDescription] = useState('');
@@ -80,11 +80,11 @@ export default function GoalsPage() {
             console.error(error);
         }
     };
-    
+
     const confirmAction = async () => {
         const { type, goal } = actionModal;
         if (!goal) return;
-        
+
         try {
             if (type === 'DELETE') {
                 await api.delete(`/api/goals/${goal.id}`);
@@ -92,8 +92,8 @@ export default function GoalsPage() {
                 await api.put(`/api/goals/${goal.id}/status`, {});
             } else if (type === 'EDIT') {
                 if (!editName || !editTarget) return;
-                await api.put(`/api/goals/${goal.id}`, { 
-                    name: editName, 
+                await api.put(`/api/goals/${goal.id}`, {
+                    name: editName,
                     target_amount: parseFloat(editTarget),
                     description: editDescription
                 });
@@ -138,7 +138,7 @@ export default function GoalsPage() {
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">Save money for what matters most.</p>
                 </div>
-                <button 
+                <button
                     onClick={() => setIsCreateModalOpen(true)}
                     className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white gradient-bg hover:shadow-lg hover:shadow-indigo-500/30 transition-all"
                 >
@@ -205,7 +205,7 @@ export default function GoalsPage() {
                                 className="block w-full pl-11 pr-10 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
                             />
                             {searchQuery && (
-                                <button 
+                                <button
                                     onClick={() => setSearchQuery('')}
                                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                                 >
@@ -263,9 +263,9 @@ export default function GoalsPage() {
                                     ) : (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {activeGoals.map(goal => (
-                                                <GoalCard 
-                                                    key={goal.id} 
-                                                    goal={goal} 
+                                                <GoalCard
+                                                    key={goal.id}
+                                                    goal={goal}
                                                     onView={(id: any) => navigate(`/dashboard/goals/${id}`)}
                                                     onEdit={handleEditGoal}
                                                     onPause={handlePauseGoal}
@@ -286,9 +286,9 @@ export default function GoalsPage() {
                                     </h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {completedGoals.map(goal => (
-                                            <GoalCard 
-                                                key={goal.id} 
-                                                goal={goal} 
+                                            <GoalCard
+                                                key={goal.id}
+                                                goal={goal}
                                                 onView={(id: any) => navigate(`/dashboard/goals/${id}`)}
                                                 onEdit={handleEditGoal}
                                                 onPause={handlePauseGoal}
@@ -315,9 +315,9 @@ export default function GoalsPage() {
                                     <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.2} />
                                         <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                                        <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val/1000}k`} />
-                                        <Tooltip 
-                                            cursor={{fill: 'transparent'}}
+                                        <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val / 1000}k`} />
+                                        <Tooltip
+                                            cursor={{ fill: 'transparent' }}
                                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                         />
                                         <Bar dataKey="Saved" stackId="a" fill="#6366f1" radius={[0, 0, 4, 4]} />
@@ -334,10 +334,10 @@ export default function GoalsPage() {
                 </div>
             </div>
 
-            <CreateGoalModal 
-                isOpen={isCreateModalOpen} 
-                onClose={() => setIsCreateModalOpen(false)} 
-                onSave={handleCreateGoal} 
+            <CreateGoalModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSave={handleCreateGoal}
             />
 
             {/* Custom Action Modal */}
@@ -352,7 +352,7 @@ export default function GoalsPage() {
                                 <h3 className="text-xl font-bold font-heading text-gray-900 dark:text-white mb-2">Delete Goal</h3>
                                 <p className="text-gray-500 dark:text-gray-400 mb-6">Are you sure you want to delete "{actionModal.goal.name}"? This action cannot be undone and will remove all tracking data for this goal.</p>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setActionModal({type: null, goal: null})} className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors">Cancel</button>
+                                    <button onClick={() => setActionModal({ type: null, goal: null })} className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors">Cancel</button>
                                     <button onClick={confirmAction} className="flex-1 py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20">Delete Goal</button>
                                 </div>
                             </>
@@ -364,12 +364,12 @@ export default function GoalsPage() {
                                 </div>
                                 <h3 className="text-xl font-bold font-heading text-gray-900 dark:text-white mb-2">{actionModal.goal.status === 'PAUSED' ? 'Resume Goal' : 'Pause Goal'}</h3>
                                 <p className="text-gray-500 dark:text-gray-400 mb-6">
-                                    {actionModal.goal.status === 'PAUSED' 
-                                        ? `Are you sure you want to resume saving for "${actionModal.goal.name}"?` 
+                                    {actionModal.goal.status === 'PAUSED'
+                                        ? `Are you sure you want to resume saving for "${actionModal.goal.name}"?`
                                         : `Are you sure you want to pause saving for "${actionModal.goal.name}"? Your progress will be saved.`}
                                 </p>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setActionModal({type: null, goal: null})} className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors">Cancel</button>
+                                    <button onClick={() => setActionModal({ type: null, goal: null })} className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors">Cancel</button>
                                     <button onClick={confirmAction} className="flex-1 py-3 rounded-xl font-bold text-white bg-yellow-500 hover:bg-yellow-600 transition-colors shadow-lg shadow-yellow-500/20">Confirm</button>
                                 </div>
                             </>
@@ -383,8 +383,8 @@ export default function GoalsPage() {
                                 <div className="space-y-4 mb-6">
                                     <div>
                                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Goal Name</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             value={editName}
                                             onChange={(e) => setEditName(e.target.value)}
                                             className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
@@ -392,8 +392,8 @@ export default function GoalsPage() {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Target Amount (₹)</label>
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
                                             value={editTarget}
                                             onChange={(e) => setEditTarget(e.target.value)}
                                             className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
@@ -401,7 +401,7 @@ export default function GoalsPage() {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Notes / Description</label>
-                                        <textarea 
+                                        <textarea
                                             value={editDescription}
                                             onChange={(e) => setEditDescription(e.target.value)}
                                             placeholder="Add a note about this goal..."
@@ -411,7 +411,7 @@ export default function GoalsPage() {
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setActionModal({type: null, goal: null})} className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors">Cancel</button>
+                                    <button onClick={() => setActionModal({ type: null, goal: null })} className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors">Cancel</button>
                                     <button onClick={confirmAction} className="flex-1 py-3 rounded-xl font-bold text-white gradient-bg hover:shadow-lg hover:shadow-indigo-500/30 transition-all">Save Changes</button>
                                 </div>
                             </>

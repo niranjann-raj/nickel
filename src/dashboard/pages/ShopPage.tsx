@@ -60,9 +60,40 @@ const PRODUCTS: Product[] = [
         price: 4200,
         icon: Speaker,
         color: 'text-violet-600 dark:text-violet-400',
-        bg: 'bg-violet-50 dark:bg-violet-900/20',
         badge: '✨ New',
     },
+];
+
+const PREMIUM_AVATARS = [
+    {
+        id: 'ninja',
+        name: 'Shadow Ninja',
+        description: 'A master of stealth. Equip this avatar to show off your disciplined saving habits.',
+        price: 2000,
+        image: '/ninja.jpg',
+    },
+    {
+        id: 'alien',
+        name: 'Extraterrestrial',
+        description: 'Out of this world! Perfect for those whose savings goals are astronomical.',
+        price: 5000,
+        image: '/alien.jpg',
+    },
+    {
+        id: 'spartan',
+        name: 'Spartan Warrior',
+        description: 'Unbreakable resolve. Show the world your fierce dedication to your financial goals.',
+        price: 7000,
+        image: '/spartan.jpg',
+    },
+    {
+        id: 'god_of_war',
+        name: 'God of War',
+        description: 'The ultimate conqueror. For those who dominate their savings targets.',
+        price: 10000,
+        image: '/god_of_war.jpg',
+        badge: '🔥 Legendary',
+    }
 ];
 
 export default function ShopPage() {
@@ -87,6 +118,27 @@ export default function ShopPage() {
             setTimeout(() => setMsg(null), 3000);
         } catch (e: any) {
             setMsg({ id: product.id, text: e.message || 'Purchase failed.', success: false });
+            setTimeout(() => setMsg(null), 3000);
+        } finally {
+            setLoading(null);
+        }
+    };
+
+    const handleBuyAvatar = async (avatar: typeof PREMIUM_AVATARS[0]) => {
+        if (!user || user.coins < avatar.price) {
+            setMsg({ id: avatar.id as any, text: `Not enough coins! You need ${avatar.price - (user?.coins || 0)} more coins.`, success: false });
+            setTimeout(() => setMsg(null), 3000);
+            return;
+        }
+        setLoading(avatar.id as any);
+        try {
+            await api.post('/api/buy-avatar', { avatar_id: avatar.id, price: avatar.price });
+            await refreshUser();
+            setMsg({ id: avatar.id as any, text: `🎉 ${avatar.name} unlocked!`, success: true });
+            addNotification('Avatar Unlocked!', `You can now equip ${avatar.name} in Settings!`, 'success');
+            setTimeout(() => setMsg(null), 3000);
+        } catch (e: any) {
+            setMsg({ id: avatar.id as any, text: e.message || 'Purchase failed.', success: false });
             setTimeout(() => setMsg(null), 3000);
         } finally {
             setLoading(null);
@@ -181,6 +233,86 @@ export default function ShopPage() {
                         </div>
                     );
                 })}
+            </div>
+            {/* Premium Avatars Section */}
+            <div className="pt-8 mt-8 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-11 h-11 bg-purple-50 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center">
+                        <span className="text-xl">🎭</span>
+                    </div>
+                    <div>
+                        <h2 className="font-heading font-bold text-2xl text-gray-900 dark:text-white">Premium Avatars</h2>
+                        <p className="text-sm text-gray-400">Unlock exclusive avatars to show off on your profile</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {PREMIUM_AVATARS.map(avatar => {
+                        const canAfford = (user?.coins || 0) >= avatar.price;
+                        const isBought = user?.unlocked_avatars?.includes(avatar.id);
+                        const isLoading = loading === (avatar.id as any);
+                        const feedback = msg?.id === (avatar.id as any) ? msg : null;
+
+                        return (
+                            <div key={avatar.id} className={`bg-white dark:bg-gray-900 rounded-[24px] p-5 border border-gray-100 dark:border-gray-800 card-glow flex flex-col gap-4 transition-all ${isBought ? 'opacity-80' : ''}`}>
+                                {/* Image + Badge */}
+                                <div className="flex items-start justify-between relative">
+                                    <div className="w-20 h-20 rounded-2xl overflow-hidden ring-4 ring-purple-100 dark:ring-purple-900/30 flex-shrink-0 bg-gray-100 dark:bg-gray-800 shadow-lg">
+                                        <img src={avatar.image} alt={avatar.name} className="w-full h-full object-cover" />
+                                    </div>
+                                    {avatar.badge && (
+                                        <span className="text-[10px] font-black uppercase tracking-wider bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2.5 py-1 rounded-full border border-orange-200 dark:border-orange-800/50 absolute -top-2 -right-2 shadow-sm">
+                                            {avatar.badge}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Info */}
+                                <div className="flex-1 mt-2">
+                                    <h3 className="font-bold text-gray-900 dark:text-white mb-1.5">{avatar.name}</h3>
+                                    <p className="text-xs text-gray-400 leading-relaxed">{avatar.description}</p>
+                                </div>
+
+                                {/* Price + CTA */}
+                                <div className="space-y-2 mt-2">
+                                    <div className="flex items-center justify-center gap-1.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl py-2 border border-gray-100 dark:border-gray-800">
+                                        <Zap className="w-3.5 h-3.5 text-yellow-500" />
+                                        <span className="font-black text-lg text-yellow-600 dark:text-yellow-400">{avatar.price.toLocaleString()}</span>
+                                        <span className="text-xs font-semibold text-gray-400">coins</span>
+                                    </div>
+
+                                    {feedback && (
+                                        <p className={`text-xs font-semibold text-center ${feedback.success ? 'text-green-500' : 'text-red-500'}`}>
+                                            {feedback.text}
+                                        </p>
+                                    )}
+
+                                    <button
+                                        onClick={() => handleBuyAvatar(avatar)}
+                                        disabled={isBought || isLoading}
+                                        className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2
+                                            ${isBought
+                                                ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-900/40 cursor-default'
+                                                : canAfford
+                                                    ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-[1.02]'
+                                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                                            }`}
+                                    >
+                                        {isBought ? (
+                                            <><CheckCircle className="w-4 h-4" /> Owned</>
+                                        ) : isLoading ? (
+                                            'Processing...'
+                                        ) : canAfford ? (
+                                            'Unlock Avatar'
+                                        ) : (
+                                            `Need ${(avatar.price - (user?.coins || 0)).toLocaleString()} more coins`
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
