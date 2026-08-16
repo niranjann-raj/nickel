@@ -1,5 +1,6 @@
 from datetime import datetime, timezone, date
 from flask_sqlalchemy import SQLAlchemy
+from utils.security import EncryptedString, EncryptedFloat
 
 db = SQLAlchemy()
 
@@ -27,7 +28,7 @@ class User(db.Model):
     total_saved = db.Column(db.Float, default=0.0)
     # Extra profile fields
     age = db.Column(db.Integer, nullable=True)
-    phone = db.Column(db.String(20), nullable=True)
+    phone = db.Column(EncryptedString(255), nullable=True)
     city = db.Column(db.String(100), nullable=True)
     streak_shields = db.Column(db.Integer, default=0)
     unlocked_avatars = db.Column(db.Text, default='')
@@ -158,7 +159,7 @@ class BankAccount(db.Model):
     __tablename__ = 'bank_account'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
-    balance = db.Column(db.Float, default=0.0)
+    balance = db.Column(EncryptedFloat, default=0.0)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class Transaction(db.Model):
@@ -166,8 +167,8 @@ class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     type = db.Column(db.String(10), nullable=False)  # CREDIT or DEBIT
-    amount = db.Column(db.Float, nullable=False)
-    description = db.Column(db.String(255))
+    amount = db.Column(EncryptedFloat, nullable=False)
+    description = db.Column(EncryptedString(255))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Autopay(db.Model):
@@ -188,7 +189,7 @@ class SavingsWallet(db.Model):
     __tablename__ = 'savings_wallet'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
-    balance = db.Column(db.Float, default=0.0)
+    balance = db.Column(EncryptedFloat, default=0.0)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class Goal(db.Model):
@@ -246,8 +247,8 @@ class GoalTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     goal_id = db.Column(db.Integer, db.ForeignKey('goals.id'), nullable=False)
     type = db.Column(db.String(20), nullable=False) # CREDIT, DEBIT, SPLURGE, GOAL_AUTOPAY
-    amount = db.Column(db.Float, nullable=False)
-    description = db.Column(db.String(255), nullable=True)
+    amount = db.Column(EncryptedFloat, nullable=False)
+    description = db.Column(EncryptedString(255), nullable=True)
     
     # New fields for Goal Autopay
     status = db.Column(db.String(20), default='SUCCESS') # SUCCESS, FAILED

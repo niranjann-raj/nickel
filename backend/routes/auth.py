@@ -9,6 +9,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 
 from models import db, User, OtpToken
 from utils.email import send_otp_email
+from utils.security import hash_password, verify_password
 
 auth_bp = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
@@ -53,7 +54,7 @@ def register():
     if User.query.filter_by(email=email).first():
         return jsonify({'error': 'An account with this email already exists.'}), 409
 
-    pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+    pw_hash = hash_password(password)
     user = User(full_name=full_name, email=email, password_hash=pw_hash)
     db.session.add(user)
     db.session.commit()
@@ -130,8 +131,20 @@ def login():
         return jsonify({'error': 'Email and password are required.'}), 400
 
     user = User.query.filter_by(email=email).first()
-    if not user or not bcrypt.check_password_hash(user.password_hash, password):
+    if not user:
         return jsonify({'error': 'Incorrect email or password.'}), 401
+
+    if user.password_hash.startswith('$2b$'):
+        # Legacy bcrypt hash - verify and migrate
+        if not bcrypt.check_password_hash(user.password_hash, password):
+            return jsonify({'error': 'Incorrect email or password.'}), 401
+        
+        user.password_hash = hash_password(password)
+        db.session.commit()
+    else:
+        # Argon2id hash
+        if not verify_password(password, user.password_hash):
+            return jsonify({'error': 'Incorrect email or password.'}), 401
 
     if not user.is_verified:
         return jsonify({'error': 'Please verify your email before logging in.'}), 403
@@ -185,7 +198,7 @@ def reset_password():
     if not user:
         return jsonify({'error': 'Account not found.'}), 404
 
-    user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    user.password_hash = hash_password(new_password)
     db.session.commit()
 
     return jsonify({'message': 'Password updated successfully.'}), 200
@@ -240,11 +253,16 @@ def change_password():
     current_password = data.get('current_password', '')
     new_password = data.get('new_password', '')
 
-    if not bcrypt.check_password_hash(user.password_hash, current_password):
-        return jsonify({'error': 'Current password is incorrect.'}), 401
+    if user.password_hash.startswith('$2b$'):
+        if not bcrypt.check_password_hash(user.password_hash, current_password):
+            return jsonify({'error': 'Current password is incorrect.'}), 401
+    else:
+        if not verify_password(current_password, user.password_hash):
+            return jsonify({'error': 'Current password is incorrect.'}), 401
+            
     if len(new_password) < 8:
         return jsonify({'error': 'New password must be at least 8 characters.'}), 400
 
-    user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    user.password_hash = hash_password(new_password)
     db.session.commit()
     return jsonify({'message': 'Password changed successfully.'}), 200

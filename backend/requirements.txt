@@ -6,3 +6,5 @@ flask-bcrypt==1.0.1
 flask-jwt-extended==4.6.0
 google-genai
 python-dotenv
+argon2-cffi==23.1.0
+cryptography==42.0.5
