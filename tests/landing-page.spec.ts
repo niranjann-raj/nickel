@@ -10,7 +10,7 @@ test('landing page loads and displays key elements', async ({ page }) => {
   });
 
   // 1. Navigate to landing page
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
 
   // 2. Verify page loads
   // The app title is usually 'nickle \u2013 Turn Saving Money Into a Game' or similar

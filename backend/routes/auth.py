@@ -7,9 +7,11 @@ from flask import Blueprint, request, jsonify
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
-from models import db, User, OtpToken
+from models import db, User, OtpToken, DailySpin, Saving, QuizAttempt, Notification, BankAccount, Transaction, Autopay, SavingsWallet, Goal, GoalAutoSaving, GoalTransaction, GoalDelayHistory
 from utils.email import send_otp_email
 from utils.security import hash_password, verify_password
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 auth_bp = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
@@ -121,6 +123,59 @@ def verify_otp():
     return jsonify({'message': 'OTP verified.'}), 200
 
 
+@auth_bp.route('/google', methods=['POST'])
+def google_auth():
+    data = request.get_json()
+    token = data.get('credential')
+    if not token:
+        return jsonify({'error': 'Missing credential'}), 400
+
+    client_id = os.environ.get('GOOGLE_CLIENT_ID')
+    if not client_id:
+        return jsonify({'error': 'Google Sign-In is not configured on the server.'}), 500
+
+    try:
+        idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), client_id)
+        
+        email = idinfo.get('email')
+        name = idinfo.get('name')
+        sub = idinfo.get('sub')
+
+        if not email or not sub:
+            return jsonify({'error': 'Invalid token payload'}), 400
+            
+        # Check by google_id
+        user = User.query.filter_by(google_id=sub).first()
+        
+        if user:
+            access_token = create_access_token(identity=str(user.id))
+            return jsonify({'token': access_token, 'user': user.to_dict()}), 200
+            
+        # Check by email
+        email_user = User.query.filter_by(email=email).first()
+        if email_user:
+            return jsonify({'error': 'An account with this email already exists. Please log in with your password.'}), 409
+            
+        # Create new user
+        new_user = User(
+            full_name=name or 'Google User',
+            email=email,
+            password_hash='!GOOGLE_AUTH_NO_PASSWORD!',
+            google_id=sub,
+            is_verified=True
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        
+        access_token = create_access_token(identity=str(new_user.id))
+        return jsonify({'token': access_token, 'user': new_user.to_dict()}), 201
+
+    except ValueError:
+        return jsonify({'error': 'Invalid Google token'}), 401
+    except Exception as e:
+        return jsonify({'error': f'Authentication failed: {str(e)}'}), 500
+
+
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -134,7 +189,9 @@ def login():
     if not user:
         return jsonify({'error': 'Incorrect email or password.'}), 401
 
-    if user.password_hash.startswith('$2b$'):
+    if user.password_hash == '!GOOGLE_AUTH_NO_PASSWORD!':
+        return jsonify({'error': 'Please log in with Google.'}), 401
+    elif user.password_hash.startswith('$2b$'):
         # Legacy bcrypt hash - verify and migrate
         if not bcrypt.check_password_hash(user.password_hash, password):
             return jsonify({'error': 'Incorrect email or password.'}), 401
@@ -266,3 +323,52 @@ def change_password():
     user.password_hash = hash_password(new_password)
     db.session.commit()
     return jsonify({'message': 'Password changed successfully.'}), 200
+
+@auth_bp.route('/delete-account', methods=['DELETE'])
+@jwt_required()
+def delete_account():
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if not user:
+        return jsonify({'error': 'User not found.'}), 404
+
+    data = request.get_json()
+    password = data.get('password', '')
+
+    if user.password_hash == '!GOOGLE_AUTH_NO_PASSWORD!':
+        pass # Skip password verification for Google-only users
+    elif user.password_hash.startswith('$2b$'):
+        if not bcrypt.check_password_hash(user.password_hash, password):
+            return jsonify({'error': 'Incorrect password.'}), 401
+    else:
+        if not verify_password(password, user.password_hash):
+            return jsonify({'error': 'Incorrect password.'}), 401
+
+    try:
+        user_email = user.email
+        user_goals = Goal.query.filter_by(user_id=user.id).all()
+        goal_ids = [g.id for g in user_goals]
+
+        if goal_ids:
+            GoalAutoSaving.query.filter(GoalAutoSaving.goal_id.in_(goal_ids)).delete(synchronize_session=False)
+            GoalTransaction.query.filter(GoalTransaction.goal_id.in_(goal_ids)).delete(synchronize_session=False)
+            GoalDelayHistory.query.filter(GoalDelayHistory.goal_id.in_(goal_ids)).delete(synchronize_session=False)
+
+        Goal.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        DailySpin.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        Saving.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        QuizAttempt.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        Notification.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        BankAccount.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        Transaction.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        Autopay.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        SavingsWallet.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        
+        OtpToken.query.filter_by(email=user_email).delete(synchronize_session=False)
+        
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'message': 'Account and all associated data permanently deleted.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'An error occurred during account deletion. Transaction rolled back.'}), 500

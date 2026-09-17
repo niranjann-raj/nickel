@@ -16,6 +16,7 @@ class User(db.Model):
     full_name = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(200), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
+    google_id = db.Column(db.String(255), unique=True, nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
     avatar = db.Column(db.String(500), default='/game_avatar.png')
     # Gamification
@@ -60,6 +61,7 @@ class User(db.Model):
             'city': self.city,
             'streak_shields': self.streak_shields,
             'unlocked_avatars': self.unlocked_avatars,
+            'has_password': self.password_hash != '!GOOGLE_AUTH_NO_PASSWORD!',
         }
 
 class DailySpin(db.Model):

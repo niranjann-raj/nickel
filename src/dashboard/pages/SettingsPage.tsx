@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Calendar, Phone, MapPin, Save, CheckCircle, AlertCircle, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Calendar, Phone, MapPin, Save, CheckCircle, AlertCircle, Lock, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { api } from '../api';
 import { useDashboard } from '../DashboardLayout';
 
@@ -29,6 +29,11 @@ export default function SettingsPage() {
     const [savingAvatar, setSavingAvatar] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteForm, setDeleteForm] = useState({ password: '', confirmText: '' });
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
 
     useEffect(() => {
         if (user) {
@@ -87,6 +92,27 @@ export default function SettingsPage() {
             setError(e.message || 'Failed to change password.');
         } finally {
             setSavingPw(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (deleteForm.confirmText !== 'DELETE') {
+            setDeleteError('You must type DELETE to confirm.');
+            return;
+        }
+        if ((user as any)?.has_password && !deleteForm.password) {
+            setDeleteError('Password is required.');
+            return;
+        }
+        setDeleting(true); setDeleteError('');
+        try {
+            await api.delete('/api/auth/delete-account', { password: deleteForm.password });
+            localStorage.removeItem('nickle_token');
+            localStorage.removeItem('nickle_user');
+            window.location.href = '/login';
+        } catch (e: any) {
+            setDeleteError(e.message || 'Failed to delete account.');
+            setDeleting(false);
         }
     };
 
@@ -220,6 +246,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Change Password Card */}
+            {(user as any)?.has_password && (
             <div className="bg-white dark:bg-gray-900 rounded-[24px] p-6 border border-gray-100 dark:border-gray-800 card-glow">
                 <div className="flex items-center gap-2 mb-5">
                     <Lock className="w-5 h-5 text-orange-500" />
@@ -262,6 +289,7 @@ export default function SettingsPage() {
                     {savingPw ? 'Changing...' : 'Change Password'}
                 </button>
             </div>
+            )}
 
             {/* Account Info */}
             <div className="bg-white dark:bg-gray-900 rounded-[24px] p-6 border border-gray-100 dark:border-gray-800">
@@ -280,6 +308,94 @@ export default function SettingsPage() {
                     ))}
                 </div>
             </div>
+
+            {/* Danger Zone */}
+            <div className="bg-white dark:bg-gray-900 rounded-[24px] p-6 border border-red-100 dark:border-red-900/30 mt-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 dark:bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="flex items-center gap-2 mb-5">
+                    <AlertCircle className="w-5 h-5 text-red-500" />
+                    <h3 className="font-bold text-red-600 dark:text-red-400">Danger Zone</h3>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Delete Account</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-md">
+                            This permanently removes your Nickel account and associated personal data that is eligible for deletion. This action cannot be undone.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setShowDeleteModal(true)}
+                        className="flex-shrink-0 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Account
+                    </button>
+                </div>
+            </div>
+
+            {/* Delete Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-md border border-gray-100 dark:border-gray-800 shadow-2xl animate-fade-in-up">
+                        <div className="w-12 h-12 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mb-4">
+                            <AlertCircle className="w-6 h-6 text-red-500" />
+                        </div>
+                        
+                        <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Delete your Nickel account?</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                            Deleting your account is irreversible. Your account and eligible user-owned data will be permanently removed.
+                        </p>
+
+                        {deleteError && (
+                            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 rounded-xl text-sm text-red-600 dark:text-red-400">
+                                {deleteError}
+                            </div>
+                        )}
+
+                        <div className="space-y-4 mb-6">
+                            {(user as any)?.has_password && (
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Enter your password to confirm</label>
+                                <input
+                                    type="password"
+                                    value={deleteForm.password}
+                                    onChange={(e) => setDeleteForm({ ...deleteForm, password: e.target.value })}
+                                    placeholder="••••••••"
+                                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/20"
+                                />
+                            </div>
+                            )}
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Type DELETE to continue</label>
+                                <input
+                                    type="text"
+                                    value={deleteForm.confirmText}
+                                    onChange={(e) => setDeleteForm({ ...deleteForm, confirmText: e.target.value })}
+                                    placeholder="DELETE"
+                                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/20"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setShowDeleteModal(false); setDeleteForm({ password: '', confirmText: '' }); setDeleteError(''); }}
+                                className="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteAccount}
+                                disabled={deleting || deleteForm.confirmText !== 'DELETE' || ((user as any)?.has_password && !deleteForm.password)}
+                                className="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:hover:bg-red-500 transition-colors"
+                            >
+                                {deleting ? 'Deleting...' : 'Delete Account'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

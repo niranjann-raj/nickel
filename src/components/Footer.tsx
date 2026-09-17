@@ -7,9 +7,7 @@ export default function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                     <div className="md:col-span-2">
                         <div className="flex items-center gap-2 mb-6">
-                            <div className="w-8 h-8 gradient-bg rounded-md flex items-center justify-center">
-                                <span className="text-white font-heading font-black text-sm">N</span>
-                            </div>
+                            <img src="/logo.png" alt="Nickle Logo" className="w-8 h-8 rounded-md object-cover" />
                             <span className="font-heading font-bold text-xl text-white tracking-tight">nickle</span>
                         </div>
                         <p className="text-gray-400 text-sm leading-relaxed mb-8 max-w-sm">

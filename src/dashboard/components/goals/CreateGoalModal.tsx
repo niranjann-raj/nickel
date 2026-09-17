@@ -160,7 +160,14 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
 
                             <div>
                                 <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Target Date</label>
-                                <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 dark:text-white" />
+                                <input 
+                                    type="date" 
+                                    value={targetDate} 
+                                    min={new Date().toISOString().split('T')[0]}
+                                    onChange={e => setTargetDate(e.target.value)} 
+                                    onClick={(e) => { try { (e.target as HTMLInputElement).showPicker(); } catch (err) {} }}
+                                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 dark:text-white dark:[color-scheme:dark]" 
+                                />
                             </div>
                             
                             <div>

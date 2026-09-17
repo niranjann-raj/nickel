@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import AuthLayout from '../components/AuthLayout';
@@ -24,6 +24,41 @@ export default function SignupPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const strength = getPasswordStrength(form.password);
+    const googleButtonRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (window.google) {
+            window.google.accounts.id.initialize({
+                client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '449734553758-pnmu0t18hv8o1suqp9fnbdakjnvhhj2j.apps.googleusercontent.com',
+                callback: handleGoogleResponse
+            });
+            window.google.accounts.id.renderButton(
+                googleButtonRef.current!,
+                { theme: 'outline', size: 'large', width: 320 }
+            );
+        }
+    }, []);
+
+    const handleGoogleResponse = async (response: any) => {
+        setError('');
+        setLoading(true);
+        try {
+            const res = await fetch(`${API}/api/auth/google`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: response.credential }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Google signup failed');
+            localStorage.setItem('nickle_token', data.token);
+            localStorage.setItem('nickle_user', JSON.stringify(data.user));
+            navigate('/dashboard');
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -130,6 +165,14 @@ export default function SignupPage() {
                 >
                     {loading ? 'Creating account…' : 'Create Account'}
                 </button>
+
+                <div className="flex items-center gap-4 my-6">
+                    <div className="h-px bg-gray-200 dark:bg-gray-700 flex-1"></div>
+                    <span className="text-sm font-medium text-gray-400">or</span>
+                    <div className="h-px bg-gray-200 dark:bg-gray-700 flex-1"></div>
+                </div>
+
+                <div className="flex justify-center w-full" ref={googleButtonRef}></div>
 
                 <p className="text-center text-sm text-gray-500 dark:text-gray-400">
                     Already have an account?{' '}
