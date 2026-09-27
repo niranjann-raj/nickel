@@ -16,6 +16,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useEffect } from 'react';
+import NotFoundGlitchPreview from './components/ui/demo';
 
 // Dashboard
 import DashboardLayout from './dashboard/DashboardLayout';
@@ -90,6 +91,9 @@ function App() {
                     <Route path="goals" element={<GoalsPage />} />
                     <Route path="goals/:id" element={<GoalDetailsPage />} />
                 </Route>
+                
+                {/* 404 Catch-All Route */}
+                <Route path="*" element={<NotFoundGlitchPreview />} />
             </Routes>
         </BrowserRouter>
     );
