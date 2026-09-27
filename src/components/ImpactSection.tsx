@@ -1,3 +1,5 @@
+import { StaggerTestimonials } from './ui/stagger-testimonials';
+
 export default function ImpactSection() {
     return (
         <section id="about" className="py-20 md:py-32 bg-white dark:bg-gray-800/50">
@@ -33,49 +35,11 @@ export default function ImpactSection() {
                         <div className="font-heading font-black text-4xl text-yellow-600 dark:text-yellow-400">94%</div>
                     </div>
                 </div>
-
-                {/* Testimonials */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-[24px] p-8 card-glow observe-animate border border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center gap-1 mb-4">
-                            <span className="text-yellow-400 dark:text-yellow-500 text-lg">★★★★★</span>
-                        </div>
-                        <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-6">"I saved $1,200 in 3 months without even feeling it. The daily challenges made it feel like a game, not a chore!"</p>
-                        <div className="flex items-center gap-4">
-                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=48&h=48&fit=crop&crop=face" alt="User" className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-gray-600" />
-                            <div>
-                                <div className="font-heading font-bold text-gray-900 dark:text-white">Maya K.</div>
-                                <div className="text-gray-500 dark:text-gray-400 text-sm">College Student, 21</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-[24px] p-8 card-glow observe-animate border border-gray-100 dark:border-gray-700" style={{ transitionDelay: '0.1s' }}>
-                        <div className="flex items-center gap-1 mb-4">
-                            <span className="text-yellow-400 dark:text-yellow-500 text-lg">★★★★★</span>
-                        </div>
-                        <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-6">"The financial quizzes taught me more about investing in a week than 4 years of school. And I'm level 18 now! 🔥"</p>
-                        <div className="flex items-center gap-4">
-                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=48&h=48&fit=crop&crop=face" alt="User" className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-gray-600" />
-                            <div>
-                                <div className="font-heading font-bold text-gray-900 dark:text-white">Jordan T.</div>
-                                <div className="text-gray-500 dark:text-gray-400 text-sm">Young Professional, 24</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-[24px] p-8 card-glow observe-animate border border-gray-100 dark:border-gray-700" style={{ transitionDelay: '0.2s' }}>
-                        <div className="flex items-center gap-1 mb-4">
-                            <span className="text-yellow-400 dark:text-yellow-500 text-lg">★★★★★</span>
-                        </div>
-                        <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-6">"My 47-day streak is my most prized possession. nickle turned me from a spender into a saver. Genuinely life-changing."</p>
-                        <div className="flex items-center gap-4">
-                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=48&h=48&fit=crop&crop=face" alt="User" className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-gray-600" />
-                            <div>
-                                <div className="font-heading font-bold text-gray-900 dark:text-white">Priya S.</div>
-                                <div className="text-gray-500 dark:text-gray-400 text-sm">First-time Saver, 22</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            </div>
+            
+            {/* Full-width Testimonials */}
+            <div className="w-full mt-12">
+                <StaggerTestimonials />
             </div>
         </section>
     );
