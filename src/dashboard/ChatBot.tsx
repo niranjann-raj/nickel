@@ -99,7 +99,7 @@ export default function ChatBot() {
                     <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-gray-50/50 dark:bg-gray-900/30">
                         {messages.map((msg, i) => (
                             <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                                <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center shadow-sm overflow-hidden ${msg.role === 'ai' ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700'}`}>
+                                <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center shadow-sm overflow-hidden ${msg.role === 'ai' ? 'bg-transparent' : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700'}`}>
                                     {msg.role === 'ai' ? <img src="/ai.png" alt="AI" className="w-full h-full object-cover" /> : <User className="w-4 h-4 text-gray-400" />}
                                 </div>
                                 <div className={`max-w-[260px] px-4 py-3 text-[14px] leading-relaxed shadow-sm ${msg.role === 'ai'
@@ -127,7 +127,7 @@ export default function ChatBot() {
 
                         {loading && (
                             <div className="flex gap-3">
-                                <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 shadow-sm overflow-hidden">
+                                <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-transparent shadow-sm overflow-hidden">
                                     <img src="/ai.png" alt="AI" className="w-full h-full object-cover" />
                                 </div>
                                 <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 px-5 py-4 rounded-2xl rounded-tl-sm flex items-center gap-1.5 shadow-sm">
@@ -168,13 +168,10 @@ export default function ChatBot() {
                 onClick={() => setOpen(o => !o)}
                 className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 relative z-50 ${open
                     ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:scale-95'
-                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:scale-105 hover:shadow-indigo-500/40'
+                    : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:scale-105'
                     }`}
             >
                 {open ? <X className="w-7 h-7" /> : <img src="/ai.png" alt="AI" className="w-full h-full rounded-full object-cover" />}
-                {!open && (
-                    <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-gray-950 animate-pulse" />
-                )}
             </button>
         </div>
     );

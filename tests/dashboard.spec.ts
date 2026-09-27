@@ -5,7 +5,7 @@ test.describe('Dashboard', () => {
     await page.goto('/login');
     await page.getByPlaceholder(/you@example.com/i).fill(process.env.TEST_USER_EMAIL || '');
     await page.getByPlaceholder(/password/i).fill(process.env.TEST_USER_PASSWORD || '');
-    await page.getByRole('button', { name: /Log In|Login|Sign In/i }).click();
+    await page.getByRole('button', { name: 'Log In', exact: true }).click();
     await page.waitForURL('**/dashboard**', { timeout: 10000 });
   });
 

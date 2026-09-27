@@ -33,7 +33,7 @@ export default function Sidebar() {
         `}>
             {/* Logo */}
             <div className={`flex items-center h-20 border-b border-gray-100 dark:border-white/5 flex-shrink-0 overflow-hidden transition-all duration-300 ${collapsed ? 'justify-center px-2' : 'px-6 gap-3'}`}>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 p-[1px] shadow-glow flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl shadow-glow flex-shrink-0 bg-transparent">
                     <img src="/logo.png" alt="Nickle Logo" className="w-full h-full rounded-xl object-cover" />
                 </div>
                 {!collapsed && (
