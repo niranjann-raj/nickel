@@ -39,50 +39,23 @@ def store_otp(email: str, purpose: str) -> str:
     return otp
 
 
-@auth_bp.route('/register', methods=['POST'])
-def register():
+@auth_bp.route('/send-otp', methods=['POST'])
+def send_otp():
     data = request.get_json()
-    full_name = (data.get('full_name') or '').strip()
     email = (data.get('email') or '').strip().lower()
-    password = data.get('password') or ''
-
-    if not full_name:
-        return jsonify({'error': 'Full name is required.'}), 400
     if not EMAIL_REGEX.match(email):
         return jsonify({'error': 'Invalid email address.'}), 400
-    if len(password) < 6:
-        return jsonify({'error': 'Password must be at least 6 characters.'}), 400
-
-    if User.query.filter_by(email=email).first():
+    
+    user = User.query.filter_by(email=email).first()
+    if user and user.is_verified:
         return jsonify({'error': 'An account with this email already exists.'}), 409
 
-    pw_hash = hash_password(password)
-    user = User(full_name=full_name, email=email, password_hash=pw_hash)
-    db.session.add(user)
-    db.session.commit()
-
-    otp = store_otp(email, 'register')
-    try:
-        send_otp_email(email, otp, 'register')
-    except Exception as e:
-        return jsonify({'error': f'Failed to send OTP email: {str(e)}'}), 500
-
-    return jsonify({'message': 'OTP sent to your email.'}), 201
-
-
-@auth_bp.route('/resend-otp', methods=['POST'])
-def resend_otp():
-    data = request.get_json()
-    email = (data.get('email') or '').strip().lower()
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({'error': 'No account with that email.'}), 404
     otp = store_otp(email, 'register')
     try:
         send_otp_email(email, otp, 'register')
     except Exception as e:
         return jsonify({'error': f'Failed to send OTP: {str(e)}'}), 500
-    return jsonify({'message': 'OTP resent.'}), 200
+    return jsonify({'message': 'OTP sent.'}), 200
 
 
 @auth_bp.route('/verify-otp', methods=['POST'])
@@ -90,7 +63,7 @@ def verify_otp():
     data = request.get_json()
     email = (data.get('email') or '').strip().lower()
     otp_code = str(data.get('otp') or '').strip()
-    mode = data.get('mode', 'register')  # 'register' | 'reset'
+    mode = data.get('mode', 'register')
 
     purpose = 'register' if mode == 'register' else 'reset'
     record = OtpToken.query.filter_by(email=email, otp_code=otp_code, purpose=purpose, used=False).first()
@@ -105,22 +78,46 @@ def verify_otp():
     if now > expires:
         record.used = True
         db.session.commit()
-        return jsonify({'error': 'OTP has expired. Please request a new one.'}), 400
+        return jsonify({'error': 'OTP has expired.'}), 400
 
     record.used = True
     db.session.commit()
-
-    if mode == 'register':
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            return jsonify({'error': 'Account not found.'}), 404
-        user.is_verified = True
-        db.session.commit()
-        token = create_access_token(identity=str(user.id))
-        return jsonify({'token': token, 'user': user.to_dict()}), 200
-
-    # For reset mode, just confirm OTP is valid, frontend moves to reset-password
     return jsonify({'message': 'OTP verified.'}), 200
+
+
+@auth_bp.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    full_name = (data.get('full_name') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
+    otp = str(data.get('otp') or '').strip()
+
+    if not full_name or not EMAIL_REGEX.match(email) or len(password) < 6:
+        return jsonify({'error': 'Invalid input data.'}), 400
+
+    # Verify that this email actually had a valid OTP marked as used recently
+    record = OtpToken.query.filter_by(email=email, otp_code=otp, purpose='register', used=True).order_by(OtpToken.created_at.desc()).first()
+    if not record:
+        return jsonify({'error': 'Email not verified. Please verify your email first.'}), 403
+
+    user = User.query.filter_by(email=email).first()
+    if user:
+        if user.is_verified:
+            return jsonify({'error': 'An account with this email already exists.'}), 409
+        else:
+            user.full_name = full_name
+            user.password_hash = hash_password(password)
+            user.is_verified = True
+    else:
+        pw_hash = hash_password(password)
+        user = User(full_name=full_name, email=email, password_hash=pw_hash, is_verified=True)
+        db.session.add(user)
+    
+    db.session.commit()
+    
+    token = create_access_token(identity=str(user.id))
+    return jsonify({'token': token, 'user': user.to_dict()}), 201
 
 
 @auth_bp.route('/google', methods=['POST'])
