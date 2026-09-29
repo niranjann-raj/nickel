@@ -34,11 +34,13 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
 
   const toggleMode = (login: boolean) => {
     setIsLogin(login);
+    setForgotPasswordStep('none');
     navigate(login ? '/login' : '/signup');
   };
 
   // Auth States
-  const [form, setForm] = useState({ fullName: '', email: '', password: '' });
+  const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
+  const [forgotPasswordStep, setForgotPasswordStep] = useState<'none' | 'email' | 'otp' | 'reset' | 'success'>('none');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -95,6 +97,72 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
           setLoading(false);
       }
   };
+  const handleForgotSendOtp = async (e?: React.FormEvent) => {
+      if (e) e.preventDefault();
+      if (!form.email) return setError("Please enter your email.");
+      setError('');
+      setLoading(true);
+      try {
+          const res = await fetch(`${API}/api/auth/forgot-password`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: form.email }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+          setOtpSent(true);
+          setCountdown(60);
+          setForgotPasswordStep('otp');
+      } catch (err: any) {
+          setError(err.message);
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  const handleForgotVerifyOtp = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!otp) return setError("Please enter the OTP.");
+      setError('');
+      setLoading(true);
+      try {
+          const res = await fetch(`${API}/api/auth/verify-otp`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: form.email, otp, mode: 'reset' }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Invalid OTP');
+          setForgotPasswordStep('reset');
+      } catch (err: any) {
+          setError(err.message);
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  const handleForgotResetPassword = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (form.password.length < 6) return setError("Password must be at least 6 characters.");
+      if (form.password !== form.confirmPassword) return setError("Passwords do not match.");
+      setError('');
+      setLoading(true);
+      try {
+          const res = await fetch(`${API}/api/auth/reset-password`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: form.email, otp, new_password: form.password }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+          setForgotPasswordStep('success');
+      } catch (err: any) {
+          setError(err.message);
+      } finally {
+          setLoading(false);
+      }
+  };
+
   const strength = getPasswordStrength(form.password);
   const googleButtonRef = useRef<HTMLDivElement>(null);
 
@@ -382,8 +450,100 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
 
 
         {isLogin ? (
-          <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
-            {Logo}
+          forgotPasswordStep !== 'none' ? (
+            <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
+              {Logo}
+
+              {forgotPasswordStep === 'email' && (
+                <>
+                  <h1 style={{fontSize:"1.35rem",fontWeight:600,marginBottom:"0.25rem",letterSpacing:"-0.025em"}}>Reset your password</h1>
+                  <p style={{fontSize:"0.85rem",color:"#888",marginBottom:"0.85rem",lineHeight:1.5}}>Enter your registered email to continue.</p>
+                  <form onSubmit={handleForgotSendOtp} style={{width:"100%",display:"flex",flexDirection:"column",gap:"0.65rem"}}>
+                    <input style={input} type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required/>
+                    {error && (
+                        <div className="flex items-center gap-2 bg-red-900/20 border border-red-800/50 text-red-400 px-4 py-3 rounded-xl text-sm w-full text-left">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            {error}
+                        </div>
+                    )}
+                    <button type="submit" disabled={loading} style={{width:"100%",padding:"0.65rem",borderRadius:6,border:"none",background:"#ededed",color:"#000",fontWeight:500,fontSize:"0.875rem",cursor:"pointer",opacity: loading ? 0.7 : 1}}>
+                        {loading ? 'Sending...' : 'Send OTP'}
+                    </button>
+                  </form>
+                </>
+              )}
+
+              {forgotPasswordStep === 'otp' && (
+                <>
+                  <h1 style={{fontSize:"1.35rem",fontWeight:600,marginBottom:"0.25rem",letterSpacing:"-0.025em"}}>Check your email</h1>
+                  <p style={{fontSize:"0.85rem",color:"#888",marginBottom:"0.85rem",lineHeight:1.5}}>Enter the 6-digit verification code.</p>
+                  <form onSubmit={handleForgotVerifyOtp} style={{width:"100%",display:"flex",flexDirection:"column",gap:"0.65rem"}}>
+                    <input style={{...input, textAlign: 'center', letterSpacing: '0.2em', fontSize: '1.25rem'}} type="text" placeholder="------" value={otp} onChange={e => setOtp(e.target.value)} maxLength={6} required />
+                    {error && (
+                        <div className="flex items-center gap-2 bg-red-900/20 border border-red-800/50 text-red-400 px-4 py-3 rounded-xl text-sm w-full text-left">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            {error}
+                        </div>
+                    )}
+                    <button type="submit" disabled={loading} style={{width:"100%",padding:"0.65rem",borderRadius:6,border:"none",background:"#ededed",color:"#000",fontWeight:500,fontSize:"0.875rem",cursor:"pointer",opacity: loading ? 0.7 : 1}}>
+                        {loading ? 'Verifying...' : 'Verify OTP'}
+                    </button>
+                    <button type="button" onClick={() => handleForgotSendOtp()} disabled={loading || countdown > 0} style={{color: countdown > 0 ? "#555" : "#888", background:"none", border:"none", fontSize:"0.75rem", cursor: countdown > 0 ? 'default' : 'pointer', marginTop: '0.5rem'}}>
+                        {countdown > 0 ? `Resend code in ${Math.floor(countdown/60)}:${String(countdown%60).padStart(2,'0')}` : 'Didn\'t receive it? Resend'}
+                    </button>
+                  </form>
+                </>
+              )}
+
+              {forgotPasswordStep === 'reset' && (
+                <>
+                  <h1 style={{fontSize:"1.35rem",fontWeight:600,marginBottom:"0.25rem",letterSpacing:"-0.025em"}}>Create a new password</h1>
+                  <p style={{fontSize:"0.85rem",color:"#888",marginBottom:"0.85rem",lineHeight:1.5}}>Please enter your new password below.</p>
+                  <form onSubmit={handleForgotResetPassword} style={{width:"100%",display:"flex",flexDirection:"column",gap:"0.65rem"}}>
+                    <div style={{position: 'relative', width: '100%'}}>
+                        <input style={{...input, paddingRight: '2.5rem'}} type={showPassword ? 'text' : 'password'} placeholder="New password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} minLength={6} required/>
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} style={{position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0}}>
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                    </div>
+                    <div style={{position: 'relative', width: '100%'}}>
+                        <input style={{...input, paddingRight: '2.5rem'}} type={showPassword ? 'text' : 'password'} placeholder="Confirm new password" value={form.confirmPassword} onChange={e => setForm({...form, confirmPassword: e.target.value})} minLength={6} required/>
+                    </div>
+                    {error && (
+                        <div className="flex items-center gap-2 bg-red-900/20 border border-red-800/50 text-red-400 px-4 py-3 rounded-xl text-sm w-full text-left">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            {error}
+                        </div>
+                    )}
+                    <button type="submit" disabled={loading} style={{width:"100%",padding:"0.65rem",borderRadius:6,border:"none",background:"#ededed",color:"#000",fontWeight:500,fontSize:"0.875rem",cursor:"pointer",opacity: loading ? 0.7 : 1}}>
+                        {loading ? 'Resetting...' : 'Reset Password'}
+                    </button>
+                  </form>
+                </>
+              )}
+
+              {forgotPasswordStep === 'success' && (
+                <>
+                  <div style={{width: '48px', height: '48px', borderRadius: '50%', background: '#22c55e20', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem'}}>
+                      <CheckCircle size={24} style={{color: '#22c55e'}} />
+                  </div>
+                  <h1 style={{fontSize:"1.35rem",fontWeight:600,marginBottom:"0.25rem",letterSpacing:"-0.025em"}}>Password reset successfully</h1>
+                  <p style={{fontSize:"0.85rem",color:"#888",marginBottom:"1.5rem",lineHeight:1.5}}>You can now sign in with your new password.</p>
+                  <button type="button" onClick={() => {setForgotPasswordStep('none'); setForm({...form, password: '', confirmPassword: ''});}} style={{width:"100%",padding:"0.65rem",borderRadius:6,border:"none",background:"#ededed",color:"#000",fontWeight:500,fontSize:"0.875rem",cursor:"pointer"}}>
+                      Back to Sign In
+                  </button>
+                </>
+              )}
+
+              {forgotPasswordStep !== 'success' && (
+                <button type="button" onClick={() => {setError(''); setForgotPasswordStep('none');}} style={{color:"#888", background:"none", border:"none", fontSize:"0.875rem", cursor:"pointer", marginTop: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                    &larr; Back to Sign In
+                </button>
+              )}
+            </div>
+          ) : (
+            <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
+              {Logo}
             <h1 style={{fontSize:"1.35rem",fontWeight:600,marginBottom:"0.25rem",letterSpacing:"-0.025em"}}>Sign in to Account</h1>
             <p style={{fontSize:"0.85rem",color:"#888",marginBottom:"0.85rem",lineHeight:1.5}}>Sign in to your Account.</p>
 
@@ -394,6 +554,12 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
                   <button type="button" onClick={() => setShowPassword(!showPassword)} style={{position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0}}>
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
+              </div>
+
+              <div style={{width: '100%', textAlign: 'right', marginTop: '-0.25rem'}}>
+                <button type="button" onClick={() => { setError(''); setForgotPasswordStep('email'); }} style={{background: 'none', border: 'none', color: '#888', fontSize: '0.75rem', cursor: 'pointer', padding: 0}}>
+                  Forgot password?
+                </button>
               </div>
               
               {error && (
@@ -419,6 +585,7 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
             </div>
             {Footer}
           </div>
+          )
         ) : (
           <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
             {Logo}

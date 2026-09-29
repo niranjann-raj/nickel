@@ -12,8 +12,6 @@ import Footer from './components/Footer';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useEffect } from 'react';
 import NotFoundGlitchPreview from './components/ui/demo';
@@ -71,8 +69,7 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
 
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
+
 
                 {/* Protected Dashboard — nested layout */}
                 <Route path="/dashboard" element={
