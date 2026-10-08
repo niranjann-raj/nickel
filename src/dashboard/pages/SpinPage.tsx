@@ -13,8 +13,8 @@ const wheelSegments = [
     { id: 7, text: '🛡️ Shield' },
     { id: 8, text: '👑 Phantom' }
 ];
-const colors = ['#991b1b', '#fbbf24', '#991b1b', '#fbbf24', '#991b1b', '#fbbf24', '#991b1b', '#fbbf24']; // Red-800 and Amber-400
-const textColors = ['#ffffff', '#78350f', '#ffffff', '#78350f', '#ffffff', '#78350f', '#ffffff', '#78350f'];
+const colors = ['#1a1a1a', '#2a2a2a', '#1a1a1a', '#2a2a2a', '#1a1a1a', '#2a2a2a', '#1a1a1a', '#2a2a2a'];
+const textColors = ['#ffffff', '#e5e5e5', '#ffffff', '#e5e5e5', '#ffffff', '#e5e5e5', '#ffffff', '#e5e5e5'];
 
 const probabilities = [
     { name: 'Better Luck Next Time', prob: '30%' },
@@ -119,13 +119,13 @@ export default function SpinPage() {
                     {/* Pointer */}
                     <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-30 filter drop-shadow-[0_6px_6px_rgba(0,0,0,0.6)]">
                         {/* Metallic triangular pointer */}
-                        <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[40px] border-t-amber-500 relative">
-                            <div className="absolute -top-[42px] -left-[14px] w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[28px] border-t-yellow-300" />
+                        <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[40px] border-t-white relative">
+                            <div className="absolute -top-[42px] -left-[14px] w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[28px] border-t-[#333]" />
                         </div>
                     </div>
 
                     {/* Outer Frame with Lights */}
-                    <div className="relative p-6 sm:p-8 rounded-full bg-gradient-to-b from-gray-800 to-gray-900 border-[6px] border-amber-600 shadow-[0_10px_40px_rgba(0,0,0,0.6),inset_0_0_20px_rgba(0,0,0,0.9)]">
+                    <div className="relative p-6 sm:p-8 rounded-full bg-gradient-to-b from-gray-800 to-gray-900 border-[6px] border-[#333] shadow-[0_10px_40px_rgba(0,0,0,0.6),inset_0_0_20px_rgba(0,0,0,0.9)]">
                         {/* Edge Lights */}
                         {Array.from({ length: 24 }).map((_, i) => {
                             const angle = i * 15;
@@ -133,7 +133,7 @@ export default function SpinPage() {
                             return (
                                 <div
                                     key={i}
-                                    className={`absolute w-3 sm:w-4 h-3 sm:h-4 rounded-full shadow-[0_0_12px_rgba(253,224,71,0.8)] z-10 ${i % 2 === 0 ? 'bg-yellow-100 animate-pulse' : 'bg-yellow-300'}`}
+                                    className={`absolute w-3 sm:w-4 h-3 sm:h-4 rounded-full shadow-[0_0_12px_rgba(255,255,255,0.8)] z-10 ${i % 2 === 0 ? 'bg-white animate-pulse' : 'bg-gray-400'}`}
                                     style={{
                                         top: `calc(50% - ${Math.cos(angle * Math.PI / 180) * radius}% - 6px)`,
                                         left: `calc(50% + ${Math.sin(angle * Math.PI / 180) * radius}% - 6px)`,
@@ -144,7 +144,7 @@ export default function SpinPage() {
 
                         {/* Wheel Itself */}
                         <div
-                            className="w-72 h-72 sm:w-[400px] sm:h-[400px] rounded-full relative overflow-hidden border-4 border-amber-500 shadow-[inset_0_0_40px_rgba(0,0,0,0.8)]"
+                            className="w-72 h-72 sm:w-[400px] sm:h-[400px] rounded-full relative overflow-hidden border-4 border-[#333] shadow-[inset_0_0_40px_rgba(0,0,0,0.8)]"
                             style={{
                                 background: `conic-gradient(${gradient})`,
                                 transform: `rotate(${rotation}deg)`,
@@ -152,7 +152,7 @@ export default function SpinPage() {
                             }}
                         >
                             {/* Inner Circle / Metallic Hub */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 sm:w-20 h-16 sm:h-20 rounded-full bg-gradient-to-br from-gray-200 via-gray-400 to-gray-600 border-[4px] sm:border-[6px] border-amber-500 z-10 shadow-[0_0_30px_rgba(0,0,0,0.7)] flex items-center justify-center">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 sm:w-20 h-16 sm:h-20 rounded-full bg-gradient-to-br from-gray-200 via-gray-400 to-gray-600 border-[4px] sm:border-[6px] border-[#333] z-10 shadow-[0_0_30px_rgba(0,0,0,0.7)] flex items-center justify-center">
                                 <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 border-2 border-gray-400 shadow-inner flex items-center justify-center">
                                     <div className="w-3 sm:w-4 h-3 sm:h-4 rounded-full bg-gray-200 shadow-sm" />
                                 </div>
@@ -186,8 +186,8 @@ export default function SpinPage() {
                         <button
                             onClick={handleSpin}
                             disabled={!canSpin || isSpinning}
-                            className={`px-12 py-4 rounded-2xl font-bold text-xl transition-all shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/50 ${canSpin && !isSpinning
-                                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:scale-105 active:scale-95 shadow-indigo-500/30'
+                            className={`px-12 py-4 rounded-2xl font-bold text-xl transition-all shadow-lg focus:outline-none focus:ring-4 focus:ring-[#555] ${canSpin && !isSpinning
+                                ? 'bg-[#151515] border border-[#222] text-white hover:scale-105 active:scale-95 shadow-shadow-[#222]-500/30'
                                 : 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed shadow-none'
                                 }`}
                         >
@@ -201,7 +201,7 @@ export default function SpinPage() {
                         </p>
                         <button
                             onClick={() => setShowInfo(true)}
-                            className="inline-flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-600 transition-colors bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1.5 rounded-full font-medium"
+                            className="inline-flex items-center gap-1.5 text-xs text-gray-300 hover:text-gray-400 transition-colors bg-[#1a1a1a] dark:bg-[#111] px-3 py-1.5 rounded-full font-medium"
                         >
                             <Info className="w-3.5 h-3.5" />
                             Reward probabilities
@@ -238,50 +238,50 @@ export default function SpinPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in zoom-in duration-300">
                     <div className="bg-white dark:bg-gray-900 rounded-[32px] max-w-sm w-full p-8 shadow-2xl text-center relative overflow-hidden border border-gray-100 dark:border-gray-800">
                         {reward.type !== 'LOSS' && (
-                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 pointer-events-none" />
+                            <div className="absolute inset-0 bg-[#151515] border border-[#222] pointer-events-none" />
                         )}
 
                         <div className="relative z-10">
                             {reward.type === 'COINS' && (
                                 <>
-                                    <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                                        <CoinsIcon className="w-10 h-10 text-yellow-500" />
+                                    <div className="w-20 h-20 bg-[#111] dark:bg-[#111] rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                                        <CoinsIcon className="w-10 h-10 text-gray-300" />
                                     </div>
                                     <h3 className="font-heading font-black text-2xl text-gray-900 dark:text-white mb-2">🎉 YOU WON!</h3>
-                                    <p className="text-3xl font-bold text-yellow-500 mb-2">+{reward.value} Coins</p>
+                                    <p className="text-3xl font-bold text-gray-300 mb-2">+{reward.value} Coins</p>
                                     <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">Reward added to your Nickel account.</p>
                                 </>
                             )}
 
                             {reward.type === 'XP' && (
                                 <>
-                                    <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                                        <Star className="w-10 h-10 text-purple-500" />
+                                    <div className="w-20 h-20 bg-[#111] dark:bg-[#111] rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                        <Star className="w-10 h-10 text-gray-300" />
                                     </div>
                                     <h3 className="font-heading font-black text-2xl text-gray-900 dark:text-white mb-2">⭐ YOU WON!</h3>
-                                    <p className="text-3xl font-bold text-purple-500 mb-2">+100 XP</p>
+                                    <p className="text-3xl font-bold text-gray-300 mb-2">+100 XP</p>
                                     <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">For your next level-up!</p>
                                 </>
                             )}
 
                             {reward.type === 'SHIELD' && (
                                 <>
-                                    <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Shield className="w-10 h-10 text-blue-500" />
+                                    <div className="w-20 h-20 bg-[#111] dark:bg-[#111] rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Shield className="w-10 h-10 text-gray-300" />
                                     </div>
                                     <h3 className="font-heading font-black text-2xl text-gray-900 dark:text-white mb-2">🛡️ YOU WON!</h3>
-                                    <p className="text-2xl font-bold text-blue-500 mb-2">Streak Shield</p>
+                                    <p className="text-2xl font-bold text-gray-300 mb-2">Streak Shield</p>
                                     <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">One shield has been added to your account.</p>
                                 </>
                             )}
 
                             {reward.type === 'AVATAR' && (
                                 <>
-                                    <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(16,185,129,0.4)] relative">
-                                        <Sparkles className="absolute top-1 right-1 w-5 h-5 text-yellow-300 animate-spin-slow" />
+                                    <div className="w-24 h-24 bg-[#151515] border border-[#222] rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(16,185,129,0.4)] relative">
+                                        <Sparkles className="absolute top-1 right-1 w-5 h-5 text-white animate-spin-slow" />
                                         <span className="text-4xl">👑</span>
                                     </div>
-                                    <p className="text-emerald-500 font-bold text-xs uppercase tracking-widest mb-1">1% Legendary Drop</p>
+                                    <p className="text-gray-300 font-bold text-xs uppercase tracking-widest mb-1">1% Legendary Drop</p>
                                     <h3 className="font-heading font-black text-3xl text-gray-900 dark:text-white mb-2">NICKEL PHANTOM</h3>
                                     <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">Your legendary avatar has been unlocked.</p>
                                 </>
@@ -289,7 +289,7 @@ export default function SpinPage() {
 
                             {reward.type === 'LOSS' && (
                                 <>
-                                    <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <div className="w-20 h-20 bg-gray-200 dark:bg-[#333] rounded-full flex items-center justify-center mx-auto mb-4">
                                         <span className="text-4xl">😅</span>
                                     </div>
                                     <h3 className="font-heading font-bold text-xl text-gray-900 dark:text-white mb-2">BETTER LUCK NEXT TIME</h3>
@@ -299,7 +299,7 @@ export default function SpinPage() {
 
                             <button
                                 onClick={() => setShowModal(false)}
-                                className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-indigo-500/25"
+                                className="w-full bg-[#151515] border border-[#222] text-white font-bold py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-shadow-[#222]-500/25"
                             >
                                 CONTINUE
                             </button>

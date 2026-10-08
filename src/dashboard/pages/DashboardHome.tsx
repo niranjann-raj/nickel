@@ -17,10 +17,10 @@ export default function DashboardHome() {
     };
 
     const stats = [
-        { icon: Flame, label: 'Current Streak', value: `${user?.current_streak ?? 0} days`, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
-        { icon: Zap, label: 'Available Coins', value: (user?.coins ?? 0).toLocaleString(), color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
-        { icon: IndianRupee, label: 'Total Saved', value: `₹${(user?.total_saved ?? 0).toLocaleString()}`, color: 'text-teal-500', bg: 'bg-teal-50 dark:bg-teal-900/20' },
-        { icon: Star, label: 'Lifetime XP', value: getLifetimeXP().toLocaleString(), color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
+        { icon: Flame, label: 'Current Streak', value: `${user?.current_streak ?? 0} days`, color: 'text-gray-300', bg: 'bg-[#1a1a1a] dark:bg-[#111]' },
+        { icon: Zap, label: 'Available Coins', value: (user?.coins ?? 0).toLocaleString(), color: 'text-gray-300', bg: 'bg-[#1a1a1a] dark:bg-[#111]' },
+        { icon: IndianRupee, label: 'Total Saved', value: `₹${(user?.total_saved ?? 0).toLocaleString()}`, color: 'text-gray-300', bg: 'bg-[#1a1a1a] dark:bg-[#111]' },
+        { icon: Star, label: 'Lifetime XP', value: getLifetimeXP().toLocaleString(), color: 'text-gray-300', bg: 'bg-[#1a1a1a] dark:bg-[#111]' },
     ];
 
     if (loading) {

@@ -117,9 +117,9 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
                                     <button 
                                         key={g.id}
                                         onClick={() => handlePredefinedSelect(g)}
-                                        className="flex items-start gap-4 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 text-left transition-all group"
+                                        className="flex items-start gap-4 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-[#333] dark:hover:border-[#333] hover:bg-[#1a1a1a]/50 dark:hover:bg-[#111] text-left transition-all group"
                                     >
-                                        <span className="text-3xl bg-gray-100 dark:bg-gray-800 w-12 h-12 flex items-center justify-center rounded-xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors">{g.icon}</span>
+                                        <span className="text-3xl bg-gray-100 dark:bg-gray-800 w-12 h-12 flex items-center justify-center rounded-xl group-hover:bg-[#111] dark:group-hover:bg-[#111] transition-colors">{g.icon}</span>
                                         <div>
                                             <h3 className="font-bold text-gray-900 dark:text-white">{g.name}</h3>
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{g.desc}</p>
@@ -128,7 +128,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
                                 ))}
                                 <button 
                                     onClick={() => { setGoalType('custom'); setStep(2); setIcon('🎯'); }}
-                                    className="flex items-start gap-4 p-4 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 text-left transition-all"
+                                    className="flex items-start gap-4 p-4 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 hover:border-[#333] dark:hover:border-[#333] hover:bg-[#1a1a1a]/50 dark:hover:bg-[#111] text-left transition-all"
                                 >
                                     <span className="text-3xl bg-gray-100 dark:bg-gray-800 w-12 h-12 flex items-center justify-center rounded-xl">✨</span>
                                     <div>
@@ -145,17 +145,17 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
                             <div className="flex gap-4">
                                 <div className="flex-1">
                                     <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Goal Name</label>
-                                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 dark:text-white" placeholder="e.g. MacBook Pro" />
+                                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-[#555] outline-none transition-all text-gray-900 dark:text-white" placeholder="e.g. MacBook Pro" />
                                 </div>
                                 <div className="w-24">
                                     <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Icon</label>
-                                    <input type="text" value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center text-xl" />
+                                    <input type="text" value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-[#555] outline-none transition-all text-center text-xl" />
                                 </div>
                             </div>
                             
                             <div>
                                 <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Target Amount (₹)</label>
-                                <input type="number" value={targetAmount} onChange={e => setTargetAmount(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 dark:text-white" placeholder="80000" />
+                                <input type="number" value={targetAmount} onChange={e => setTargetAmount(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-[#555] outline-none transition-all text-gray-900 dark:text-white" placeholder="80000" />
                             </div>
 
                             <div>
@@ -166,22 +166,22 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
                                     min={new Date().toISOString().split('T')[0]}
                                     onChange={e => setTargetDate(e.target.value)} 
                                     onClick={(e) => { try { (e.target as HTMLInputElement).showPicker(); } catch (err) {} }}
-                                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 dark:text-white dark:[color-scheme:dark]" 
+                                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-[#555] outline-none transition-all text-gray-900 dark:text-white dark:[color-scheme:dark]" 
                                 />
                             </div>
                             
                             <div>
                                 <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Description (Optional)</label>
-                                <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 dark:text-white resize-none" rows={3} placeholder="Add some motivation..." />
+                                <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-[#555] outline-none transition-all text-gray-900 dark:text-white resize-none" rows={3} placeholder="Add some motivation..." />
                             </div>
                         </div>
                     )}
 
                     {step === 3 && (
                         <div className="space-y-6">
-                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
-                                <h3 className="font-bold text-indigo-900 dark:text-indigo-200 mb-1 flex items-center gap-2"><Target className="w-5 h-5"/> AI Saving Recommendation</h3>
-                                <p className="text-sm text-indigo-700 dark:text-indigo-400">To reach ₹{targetAmount} by {new Date(targetDate).toLocaleDateString()}, you need to save consistently.</p>
+                            <div className="bg-[#1a1a1a] dark:bg-[#111] p-5 rounded-2xl border border-[#333] dark:border-[#333]">
+                                <h3 className="font-bold text-gray-500 dark:text-white mb-1 flex items-center gap-2"><Target className="w-5 h-5"/> AI Saving Recommendation</h3>
+                                <p className="text-sm text-gray-500 dark:text-white">To reach ₹{targetAmount} by {new Date(targetDate).toLocaleDateString()}, you need to save consistently.</p>
                             </div>
 
                             <div>
@@ -191,7 +191,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
                                         <button 
                                             key={f}
                                             onClick={() => setFreq(f)}
-                                            className={`py-2 rounded-xl text-sm font-bold transition-colors border ${freq === f ? 'bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                                            className={`py-2 rounded-xl text-sm font-bold transition-colors border ${freq === f ? 'bg-gray-900 text-white border-gray-900 dark:bg-gray-900 dark:text-white dark:border-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                                         >
                                             {f}
                                         </button>
@@ -202,7 +202,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
                             {freq === 'CUSTOM' && (
                                 <div>
                                     <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Save every X days</label>
-                                    <input type="number" value={customDays} onChange={e => setCustomDays(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 dark:text-white" placeholder="15" />
+                                    <input type="number" value={customDays} onChange={e => setCustomDays(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-[#555] outline-none transition-all text-gray-900 dark:text-white" placeholder="15" />
                                 </div>
                             )}
 
@@ -210,7 +210,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
                                 <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Auto Saving Amount (₹)</label>
                                 <div className="relative">
                                     <span className="absolute left-4 top-3 text-gray-500 font-bold">₹</span>
-                                    <input type="number" value={autoAmount} onChange={e => setAutoAmount(e.target.value)} className="w-full pl-8 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-lg text-gray-900 dark:text-white" />
+                                    <input type="number" value={autoAmount} onChange={e => setAutoAmount(e.target.value)} className="w-full pl-8 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-[#555] outline-none transition-all font-bold text-lg text-gray-900 dark:text-white" />
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2">You can accept the AI recommendation or enter your own amount.</p>
                             </div>
@@ -226,7 +226,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
                         </button>
                     )}
                     {step > 1 ? (
-                        <button onClick={handleNext} className="px-6 py-2.5 rounded-xl font-bold text-white gradient-bg hover:shadow-lg hover:shadow-indigo-500/30 transition-all">
+                        <button onClick={handleNext} className="px-6 py-2.5 rounded-xl font-bold bg-[#ffffff] text-[#000000] hover:shadow-lg hover:shadow-shadow-[#222]-500/30 transition-all">
                             {step === 3 ? 'Start Saving Goal' : 'Continue'}
                         </button>
                     ) : (

@@ -45,7 +45,7 @@ export default function TransactionHistoryCard() {
                     {transactions.slice(0, 10).map(tx => (
                         <div key={tx.id} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-colors">
                             <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.type === 'CREDIT' ? 'bg-green-50 text-green-600 dark:bg-green-900/20' : 'bg-red-50 text-red-600 dark:bg-red-900/20'}`}>
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.type === 'CREDIT' ? 'bg-[#1a1a1a] text-gray-400 dark:bg-[#111]' : 'bg-red-50 text-red-600 dark:bg-red-900/20'}`}>
                                     {tx.type === 'CREDIT' ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
                                 </div>
                                 <div className="max-w-[200px] sm:max-w-xs">
@@ -53,7 +53,7 @@ export default function TransactionHistoryCard() {
                                     <p className="text-[10px] text-gray-500 uppercase font-semibold">{new Date(tx.created_at).toLocaleDateString()} • {new Date(tx.created_at).toLocaleTimeString()}</p>
                                 </div>
                             </div>
-                            <div className={`font-black tracking-tight ${tx.type === 'CREDIT' ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'}`}>
+                            <div className={`font-black tracking-tight ${tx.type === 'CREDIT' ? 'text-gray-400 dark:text-white' : 'text-gray-900 dark:text-white'}`}>
                                 {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount.toLocaleString()}
                             </div>
                         </div>

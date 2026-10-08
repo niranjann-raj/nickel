@@ -1,5 +1,5 @@
 const colors = require('tailwindcss/colors');
-
+// trigger rebuild quiz options
 /** @type {import('tailwindcss').Config} */
 export default {
     darkMode: 'class',

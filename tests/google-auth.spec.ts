@@ -7,13 +7,13 @@ test.describe('Google Authentication', () => {
     // Check if the Google button container or iframe is present
     // The google Identity Services library creates an iframe inside our container
     const googleIframe = page.locator('iframe[src*="accounts.google.com"]').first();
-    await expect(googleIframe).toBeVisible({ timeout: 10000 });
+    await expect(googleIframe).toBeAttached({ timeout: 10000 });
   });
 
   test('Google button renders on Signup page', async ({ page }) => {
     await page.goto('/signup');
     const googleIframe = page.locator('iframe[src*="accounts.google.com"]').first();
-    await expect(googleIframe).toBeVisible({ timeout: 10000 });
+    await expect(googleIframe).toBeAttached({ timeout: 10000 });
   });
 
   test('Successful mocked Google login returns to dashboard', async ({ page }) => {

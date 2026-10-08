@@ -34,7 +34,7 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
     }, []);
 
     return (
-        <header className="h-20 flex items-center justify-between px-6 border-b border-gray-100 dark:border-white/5 bg-white/80 dark:bg-[#050505]/40 backdrop-blur-2xl flex-shrink-0 z-10 relative">
+        <header className="h-20 flex items-center justify-between px-6 border-b-0 border-transparent bg-white dark:bg-[#050505] flex-shrink-0 z-10 relative">
             <div className="flex items-center gap-4">
                 <button
                     onClick={onMenuClick}
@@ -44,7 +44,7 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
                 </button>
                 <div>
                     <h1 className="font-heading font-bold text-lg text-gray-900 dark:text-white leading-tight">
-                        Welcome back, <span className="gradient-text">{userName?.split(' ')[0] || 'Saver'}</span> 👋
+                        Welcome back, <span className="bg-gradient-to-r from-gray-400 via-white to-gray-500 text-transparent bg-clip-text drop-shadow-[0_0_12px_rgba(255,255,255,0.4)] font-black">{userName?.split(' ')[0] || 'Saver'}</span>
                     </h1>
                     <p className="text-xs text-gray-400 dark:text-gray-500">Let's grow your savings today</p>
                 </div>
@@ -55,24 +55,24 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
                 {/* Stats Row */}
                 {user && (
                     <div className="hidden md:flex items-center gap-2 mr-2 glass-panel p-1.5 rounded-2xl">
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold text-sm border border-transparent dark:border-orange-500/20 shadow-sm" title="Current Streak">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1a1a1a] dark:bg-[#111] text-gray-400 dark:text-white font-bold text-sm border border-transparent dark:border-[#333] shadow-sm" title="Current Streak">
                             <Flame className="w-4 h-4" />
                             <span>{user.current_streak || 0}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 font-bold text-sm border border-transparent dark:border-yellow-500/20 shadow-sm" title="Available Coins">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1a1a1a] dark:bg-[#111] text-gray-400 dark:text-white font-bold text-sm border border-transparent dark:border-[#333] shadow-sm" title="Available Coins">
                             <Zap className="w-4 h-4" />
                             <span>{(user.coins || 0).toLocaleString()}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 font-bold text-sm border border-transparent dark:border-teal-500/20 shadow-sm" title="Total Saved">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1a1a1a] dark:bg-[#111] text-gray-400 dark:text-white font-bold text-sm border border-transparent dark:border-[#333] shadow-sm" title="Total Saved">
                             <IndianRupee className="w-4 h-4" />
                             <span>{(user.total_saved || 0).toLocaleString()}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-sm border border-transparent dark:border-indigo-500/20 shadow-sm" title="Lifetime XP">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1a1a1a] dark:bg-[#111] text-gray-400 dark:text-white font-bold text-sm border border-transparent dark:border-[#333] shadow-sm" title="Lifetime XP">
                             <Star className="w-4 h-4" />
                             <span>XP {getLifetimeXP().toLocaleString()}</span>
                         </div>
                         {user.streak_shields > 0 && (
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-sm border border-transparent dark:border-blue-500/20 shadow-sm" title="Streak Shields Available">
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1a1a1a] dark:bg-[#111] text-gray-400 dark:text-white font-bold text-sm border border-transparent dark:border-[#333] shadow-sm" title="Streak Shields Available">
                                 <Shield className="w-4 h-4" />
                                 <span>{user.streak_shields}</span>
                             </div>
@@ -83,11 +83,11 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
                 <div className="relative" ref={notifRef}>
                     <button 
                         onClick={() => setShowNotifs(!showNotifs)}
-                        className={`p-2 rounded-xl transition-colors relative ${showNotifs ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                        className={`p-2 rounded-xl transition-colors relative ${showNotifs ? 'bg-[#1a1a1a] dark:bg-[#111] text-gray-400' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                     >
                         <Bell className="w-5 h-5" />
                         {notifications.length > 0 && (
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-500 rounded-full ring-2 ring-white dark:ring-gray-900"></span>
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#111] rounded-full ring-2 ring-white dark:ring-gray-900"></span>
                         )}
                     </button>
 
@@ -97,7 +97,7 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
                             <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gray-50/50 dark:bg-[#050505]/50">
                                 <h3 className="font-bold text-sm text-gray-900 dark:text-white">Notifications</h3>
                                 {notifications.length > 0 && (
-                                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                                    <span className="text-xs font-semibold text-gray-400 dark:text-white bg-[#1a1a1a] dark:bg-[#111] px-2 py-0.5 rounded-full border border-[#333]">
                                         {notifications.length} New
                                     </span>
                                 )}
@@ -110,12 +110,12 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
                                 ) : (
                                     notifications.map(notif => {
                                         let Icon = Gift;
-                                        let color = 'text-blue-500';
-                                        let bg = 'bg-blue-50 dark:bg-blue-900/20';
+                                        let color = 'text-gray-300';
+                                        let bg = 'bg-[#1a1a1a] dark:bg-[#111]';
                                         
-                                        if (notif.type === 'success') { Icon = CheckCircle; color = 'text-green-500'; bg = 'bg-green-50 dark:bg-green-900/20'; }
-                                        if (notif.type === 'reward') { Icon = Trophy; color = 'text-yellow-500'; bg = 'bg-yellow-50 dark:bg-yellow-900/20'; }
-                                        if (notif.type === 'info') { Icon = Sparkles; color = 'text-indigo-500'; bg = 'bg-indigo-50 dark:bg-indigo-900/20'; }
+                                        if (notif.type === 'success') { Icon = CheckCircle; color = 'text-gray-300'; bg = 'bg-[#1a1a1a] dark:bg-[#111]'; }
+                                        if (notif.type === 'reward') { Icon = Trophy; color = 'text-gray-300'; bg = 'bg-[#1a1a1a] dark:bg-[#111]'; }
+                                        if (notif.type === 'info') { Icon = Sparkles; color = 'text-gray-300'; bg = 'bg-[#1a1a1a] dark:bg-[#111]'; }
 
                                         return (
                                             <div key={notif.id} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-50 dark:border-gray-800/50 last:border-0 cursor-pointer flex gap-3">

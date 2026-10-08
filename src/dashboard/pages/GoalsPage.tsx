@@ -106,7 +106,7 @@ export default function GoalsPage() {
     };
 
     if (loading) {
-        return <div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>;
+        return <div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#333]"></div></div>;
     }
 
     const filteredGoals = goals.filter(g => {
@@ -133,14 +133,14 @@ export default function GoalsPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold font-heading text-gray-900 dark:text-white flex items-center gap-3">
-                        <Target className="w-8 h-8 text-indigo-500" />
+                        <Target className="w-8 h-8 text-gray-300" />
                         Goal Based Saving
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">Save money for what matters most.</p>
                 </div>
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white gradient-bg hover:shadow-lg hover:shadow-indigo-500/30 transition-all"
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-[#ffffff] text-[#000000] hover:shadow-lg hover:shadow-shadow-[#222]-500/30 transition-all "
                 >
                     <Plus className="w-5 h-5" /> Create Goal
                 </button>
@@ -150,7 +150,7 @@ export default function GoalsPage() {
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl bg-[#1a1a1a] dark:bg-[#111] text-gray-300 flex items-center justify-center">
                             <Target className="w-6 h-6" />
                         </div>
                         <div>
@@ -159,7 +159,7 @@ export default function GoalsPage() {
                         </div>
                     </div>
                     <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-500 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl bg-[#1a1a1a] dark:bg-[#111] text-gray-300 flex items-center justify-center">
                             <CheckCircle className="w-6 h-6" />
                         </div>
                         <div>
@@ -168,7 +168,7 @@ export default function GoalsPage() {
                         </div>
                     </div>
                     <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-500 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl bg-[#1a1a1a] dark:bg-[#111] text-gray-300 flex items-center justify-center">
                             <PiggyBank className="w-6 h-6" />
                         </div>
                         <div>
@@ -177,7 +177,7 @@ export default function GoalsPage() {
                         </div>
                     </div>
                     <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-500 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl bg-[#1a1a1a] dark:bg-[#111] text-gray-300 flex items-center justify-center">
                             <Calendar className="w-6 h-6" />
                         </div>
                         <div>
@@ -202,7 +202,7 @@ export default function GoalsPage() {
                                 placeholder="Search goals..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="block w-full pl-11 pr-10 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
+                                className="block w-full pl-11 pr-10 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-[#555] outline-none transition-all shadow-sm"
                             />
                             {searchQuery && (
                                 <button
@@ -217,7 +217,7 @@ export default function GoalsPage() {
                             <select
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                                className="block w-full pl-4 pr-10 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm appearance-none"
+                                className="block w-full pl-4 pr-10 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-[#555] outline-none transition-all shadow-sm appearance-none"
                             >
                                 <option value="All">All</option>
                                 <option value="Active">Active</option>
@@ -249,14 +249,14 @@ export default function GoalsPage() {
                             {(activeGoals.length > 0 || !isFiltering) && (
                                 <div>
                                     <h2 className="text-xl font-bold font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                                        <Target className="w-5 h-5 text-indigo-500" /> Active Goals
+                                        <Target className="w-5 h-5 text-gray-300" /> Active Goals
                                     </h2>
                                     {activeGoals.length === 0 && !isFiltering ? (
                                         <div className="bg-white dark:bg-gray-900 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
                                             <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🎯</div>
                                             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No active goals yet</h3>
                                             <p className="text-gray-500 dark:text-gray-400 mb-6">Start saving for your dreams today.</p>
-                                            <button onClick={() => setIsCreateModalOpen(true)} className="px-6 py-2.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-xl font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
+                                            <button onClick={() => setIsCreateModalOpen(true)} className="px-6 py-2.5 bg-[#ffffff] text-[#000000] rounded-xl font-bold hover:bg-[#111] dark:hover:bg-[#111] transition-colors">
                                                 Create First Goal
                                             </button>
                                         </div>
@@ -282,7 +282,7 @@ export default function GoalsPage() {
                             {completedGoals.length > 0 && (
                                 <div>
                                     <h2 className="text-xl font-bold font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                                        <CheckCircle className="w-5 h-5 text-green-500" /> Completed Goals
+                                        <CheckCircle className="w-5 h-5 text-gray-300" /> Completed Goals
                                     </h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {completedGoals.map(goal => (
@@ -307,7 +307,7 @@ export default function GoalsPage() {
                 <div className="space-y-6">
                     <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
                         <h3 className="font-bold text-lg font-heading mb-6 text-gray-900 dark:text-white flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-indigo-500" /> Progress Overview
+                            <TrendingUp className="w-5 h-5 text-gray-300" /> Progress Overview
                         </h3>
                         {chartData.length > 0 ? (
                             <div className="h-64">
@@ -359,7 +359,7 @@ export default function GoalsPage() {
                         )}
                         {actionModal.type === 'PAUSE' && (
                             <>
-                                <div className="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center text-yellow-500 mb-4">
+                                <div className="w-12 h-12 rounded-full bg-[#111] dark:bg-[#111] flex items-center justify-center text-gray-300 mb-4">
                                     {actionModal.goal.status === 'PAUSED' ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
                                 </div>
                                 <h3 className="text-xl font-bold font-heading text-gray-900 dark:text-white mb-2">{actionModal.goal.status === 'PAUSED' ? 'Resume Goal' : 'Pause Goal'}</h3>
@@ -370,13 +370,13 @@ export default function GoalsPage() {
                                 </p>
                                 <div className="flex gap-3">
                                     <button onClick={() => setActionModal({ type: null, goal: null })} className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors">Cancel</button>
-                                    <button onClick={confirmAction} className="flex-1 py-3 rounded-xl font-bold text-white bg-yellow-500 hover:bg-yellow-600 transition-colors shadow-lg shadow-yellow-500/20">Confirm</button>
+                                    <button onClick={confirmAction} className="flex-1 py-3 rounded-xl font-bold bg-[#ffffff] text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors shadow-lg shadow-shadow-[#222]-500/20">Confirm</button>
                                 </div>
                             </>
                         )}
                         {actionModal.type === 'EDIT' && (
                             <>
-                                <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 mb-4">
+                                <div className="w-12 h-12 rounded-full bg-[#111] dark:bg-[#111] flex items-center justify-center text-gray-300 mb-4">
                                     <Edit3 className="w-6 h-6" />
                                 </div>
                                 <h3 className="text-xl font-bold font-heading text-gray-900 dark:text-white mb-4">Edit Goal</h3>
@@ -387,7 +387,7 @@ export default function GoalsPage() {
                                             type="text"
                                             value={editName}
                                             onChange={(e) => setEditName(e.target.value)}
-                                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#555] outline-none transition-all"
                                         />
                                     </div>
                                     <div>
@@ -396,7 +396,7 @@ export default function GoalsPage() {
                                             type="number"
                                             value={editTarget}
                                             onChange={(e) => setEditTarget(e.target.value)}
-                                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#555] outline-none transition-all"
                                         />
                                     </div>
                                     <div>
@@ -406,13 +406,13 @@ export default function GoalsPage() {
                                             onChange={(e) => setEditDescription(e.target.value)}
                                             placeholder="Add a note about this goal..."
                                             rows={3}
-                                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+                                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#555] outline-none transition-all resize-none"
                                         />
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
                                     <button onClick={() => setActionModal({ type: null, goal: null })} className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors">Cancel</button>
-                                    <button onClick={confirmAction} className="flex-1 py-3 rounded-xl font-bold text-white gradient-bg hover:shadow-lg hover:shadow-indigo-500/30 transition-all">Save Changes</button>
+                                    <button onClick={confirmAction} className="flex-1 py-3 rounded-xl font-bold bg-[#ffffff] text-[#000000] hover:shadow-lg hover:shadow-shadow-[#222]-500/30 transition-all">Save Changes</button>
                                 </div>
                             </>
                         )}

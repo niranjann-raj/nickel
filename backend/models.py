@@ -42,6 +42,17 @@ class User(db.Model):
         if current_level_progress < 0:
             current_level_progress = 0
             
+        goals_saved = 0.0
+        wallet_balance = 0.0
+        try:
+            from models import Goal, SavingsWallet
+            goals_saved = db.session.query(db.func.sum(Goal.saved_amount)).filter(Goal.user_id == self.id).scalar() or 0.0
+            wallet = SavingsWallet.query.filter_by(user_id=self.id).first()
+            if wallet and wallet.balance is not None:
+                wallet_balance = float(wallet.balance)
+        except Exception:
+            pass
+            
         return {
             'id': self.id,
             'full_name': self.full_name,
@@ -55,7 +66,7 @@ class User(db.Model):
             'xp_to_next_level': xp_for_level(self.level),
             'coins': self.coins,
             'current_streak': self.current_streak,
-            'total_saved': self.total_saved,
+            'total_saved': self.total_saved + goals_saved + wallet_balance,
             'age': self.age,
             'phone': self.phone,
             'city': self.city,

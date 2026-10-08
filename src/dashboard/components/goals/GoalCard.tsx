@@ -13,14 +13,14 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
     const isCompleted = goal.status === 'COMPLETED';
 
     return (
-        <div className="relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 group">
+        <div className="relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-lg hover:shadow-shadow-[#222]-500/10 transition-all duration-300 group">
             {/* Top accent line */}
-            <div className={`absolute top-0 left-0 right-0 h-1 ${isCompleted ? 'bg-green-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'}`} />
+            <div className={`absolute top-0 left-0 right-0 h-1 ${isCompleted ? 'bg-[#111]' : 'bg-[#151515] border border-[#222]'}`} />
 
             <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-inner ${isCompleted ? 'bg-green-50 dark:bg-green-900/20' : 'bg-indigo-50 dark:bg-indigo-900/20'}`}>
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-inner ${isCompleted ? 'bg-[#1a1a1a] dark:bg-[#111]' : 'bg-[#1a1a1a] dark:bg-[#111]'}`}>
                             {goal.icon}
                         </div>
                         <div>
@@ -31,9 +31,9 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
                         </div>
                     </div>
                     {/* Status Badge */}
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${isCompleted ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                            goal.status === 'PAUSED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${isCompleted ? 'bg-[#111] text-gray-500 dark:bg-[#111] dark:text-white' :
+                            goal.status === 'PAUSED' ? 'bg-[#111] text-gray-500 dark:bg-[#111] dark:text-white' :
+                                'bg-[#111] text-gray-500 dark:bg-[#111] dark:text-white'
                         }`}>
                         {goal.status}
                     </span>
@@ -53,9 +53,9 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
 
                 {/* AutoPay Info */}
                 {goal.auto_saving && (
-                    <div className="mb-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl p-3 flex justify-between items-center text-xs">
+                    <div className="mb-4 bg-[#1a1a1a]/50 dark:bg-[#111] rounded-xl p-3 flex justify-between items-center text-xs">
                         <div className="text-gray-500 dark:text-gray-400">
-                            AutoPay: <span className="font-bold text-indigo-500">{goal.auto_saving.frequency}</span>
+                            AutoPay: <span className="font-bold text-gray-300">{goal.auto_saving.frequency}</span>
                         </div>
                         <div className="font-bold text-gray-900 dark:text-white">
                             ₹{goal.auto_saving.amount}
@@ -68,10 +68,9 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
                 )}
 
                 {/* Progress Bar */}
-                <div className="relative h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-4 shadow-inner">
+                <div className="relative h-3 bg-gray-200 dark:bg-[#333] rounded-full overflow-hidden mb-4 shadow-inner">
                     <div
-                        className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out ${isCompleted ? 'bg-green-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'
-                            }`}
+                        className="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out bg-[#ffffff]"
                         style={{ width: `${progressCapped}%` }}
                     />
                 </div>
@@ -92,7 +91,7 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
                     {!isCompleted && goal.auto_saving && (
                         <button
                             onClick={() => onRunAutopay(goal.id)}
-                            className="col-span-1 py-3 rounded-xl bg-indigo-500 text-white font-bold hover:bg-indigo-600 transition-colors shadow-sm shadow-indigo-500/20 flex items-center justify-center gap-2"
+                            className="col-span-1 py-3 rounded-xl bg-[#ffffff] text-[#000000] font-bold hover:bg-[#111] transition-colors shadow-sm shadow-shadow-[#222]-500/20 flex items-center justify-center gap-2"
                             title="Test AutoPay Manually"
                         >
                             <Zap className="w-4 h-4" /> Run
@@ -100,11 +99,11 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
                     )}
                     {/* Secondary Actions hover reveal or just icons */}
                     <div className="col-span-2 flex justify-end gap-2 mt-2 border-t border-gray-100 dark:border-gray-800 pt-4">
-                        <button onClick={() => onEdit(goal)} className="p-2 text-gray-400 hover:text-indigo-500 transition-colors" title="Edit">
+                        <button onClick={() => onEdit(goal)} className="p-2 text-gray-400 hover:text-gray-300 transition-colors" title="Edit">
                             <Edit3 className="w-4 h-4" />
                         </button>
                         {!isCompleted && (
-                            <button onClick={() => onPause(goal)} className={`p-2 transition-colors ${goal.status === 'PAUSED' ? 'text-green-500 hover:text-green-600' : 'text-yellow-500 hover:text-yellow-600'}`} title={goal.status === 'PAUSED' ? 'Resume' : 'Pause'}>
+                            <button onClick={() => onPause(goal)} className={`p-2 transition-colors ${goal.status === 'PAUSED' ? 'text-gray-300 hover:text-gray-400' : 'text-gray-300 hover:text-gray-400'}`} title={goal.status === 'PAUSED' ? 'Resume' : 'Pause'}>
                                 {goal.status === 'PAUSED' ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
                             </button>
                         )}

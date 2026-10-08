@@ -168,17 +168,33 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
 
   // Google Auth Init
   useEffect(() => {
+    const initGoogle = () => {
+      if (window.google && googleButtonRef.current) {
+        googleButtonRef.current.innerHTML = '';
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '449734553758-pnmu0t18hv8o1suqp9fnbdakjnvhhj2j.apps.googleusercontent.com',
+          callback: handleGoogleResponse,
+          use_fedcm_for_prompt: false
+        });
+        window.google.accounts.id.renderButton(
+          googleButtonRef.current,
+          { theme: 'outline', size: 'large', width: 320 }
+        );
+      }
+    };
+
     if (window.google) {
-      window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '449734553758-pnmu0t18hv8o1suqp9fnbdakjnvhhj2j.apps.googleusercontent.com',
-        callback: handleGoogleResponse
-      });
-      window.google.accounts.id.renderButton(
-        googleButtonRef.current!,
-        { theme: 'outline', size: 'large', width: 320 }
-      );
+      initGoogle();
+    } else {
+      const interval = setInterval(() => {
+        if (window.google) {
+          clearInterval(interval);
+          initGoogle();
+        }
+      }, 100);
+      return () => clearInterval(interval);
     }
-  }, [isLogin]); // Re-render button when switching modes
+  }, [isLogin, forgotPasswordStep]); // Re-render button when switching modes
 
   const handleGoogleResponse = async (response: any) => {
     setError('');
@@ -544,8 +560,7 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
           ) : (
             <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
               {Logo}
-            <h1 style={{fontSize:"1.35rem",fontWeight:600,marginBottom:"0.25rem",letterSpacing:"-0.025em"}}>Sign in to Account</h1>
-            <p style={{fontSize:"0.85rem",color:"#888",marginBottom:"0.85rem",lineHeight:1.5}}>Sign in to your Account.</p>
+            <h1 style={{fontSize:"1.35rem",fontWeight:600,marginBottom:"1.25rem",letterSpacing:"-0.025em"}}>Sign in to Account</h1>
 
             <form onSubmit={handleLoginSubmit} style={{width:"100%",display:"flex",flexDirection:"column",gap:"0.65rem"}}>
               <input style={input} type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required/>
@@ -589,8 +604,7 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
         ) : (
           <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
             {Logo}
-            <h1 style={{fontSize:"1.35rem",fontWeight:600,marginBottom:"0.25rem",letterSpacing:"-0.025em"}}>Sign up for Account</h1>
-            <p style={{fontSize:"0.85rem",color:"#888",marginBottom:"0.85rem",lineHeight:1.5}}>Create a new account to get started.</p>
+            <h1 style={{fontSize:"1.35rem",fontWeight:600,marginBottom:"1.25rem",letterSpacing:"-0.025em"}}>Sign up for Account</h1>
 
             <form onSubmit={handleSignupSubmit} style={{width:"100%",display:"flex",flexDirection:"column",gap:"0.65rem"}}>
               <input style={input} type="text" placeholder="Full Name" value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} required/>

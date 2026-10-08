@@ -26,13 +26,13 @@ export default function Sidebar() {
     return (
         <aside className={`
             relative h-full flex flex-col flex-shrink-0
-            bg-white dark:bg-[#050505]/60 dark:backdrop-blur-2xl
-            border-r border-gray-100 dark:border-white/5
+            bg-white dark:bg-[#050505]
+            border-r-0 border-transparent
             shadow-2xl transition-all duration-300 ease-in-out z-20
             ${collapsed ? 'w-20' : 'w-64'}
         `}>
             {/* Logo */}
-            <div className={`flex items-center h-20 border-b border-gray-100 dark:border-white/5 flex-shrink-0 overflow-hidden transition-all duration-300 ${collapsed ? 'justify-center px-2' : 'px-6 gap-3'}`}>
+            <div className={`flex items-center h-20 border-b-0 border-transparent flex-shrink-0 overflow-hidden transition-all duration-300 ${collapsed ? 'justify-center px-2' : 'px-6 gap-3'}`}>
                 <div className="w-10 h-10 rounded-xl shadow-glow flex-shrink-0 bg-transparent">
                     <img src="/logo.png" alt="Nickle Logo" className="w-full h-full rounded-xl object-cover" />
                 </div>
@@ -46,7 +46,7 @@ export default function Sidebar() {
             {/* Collapse Toggle Button */}
             <button
                 onClick={() => setCollapsed(c => !c)}
-                className="absolute -right-3.5 top-[72px] z-50 w-7 h-7 bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/10 rounded-full flex items-center justify-center shadow-md dark:shadow-black hover:shadow-indigo-500/30 hover:border-indigo-500/50 transition-all"
+                className="absolute -right-3.5 top-[72px] z-50 w-7 h-7 bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/10 rounded-full flex items-center justify-center shadow-md dark:shadow-black hover:shadow-shadow-[#222]-500/30 hover:border-[#333] transition-all"
             >
                 {collapsed
                     ? <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -66,18 +66,15 @@ export default function Sidebar() {
                             `flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 relative group
                             ${collapsed ? 'justify-center px-0' : 'px-4'}
                             ${isActive
-                                ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-[inset_0_0_20px_rgba(99,102,241,0.15)]'
+                                ? 'bg-[#ffffff] text-[#000000] border border-[#ffffff] shadow-md font-bold'
                                 : 'text-gray-600 dark:text-gray-400 border border-transparent hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-200'
                             }`
                         }
                     >
                         {({ isActive }) => (
                             <>
-                                {isActive && !collapsed && (
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 rounded-r-full shadow-[0_0_10px_rgba(99,102,241,0.8)]" />
-                                )}
-                                <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                                {!collapsed && <span className="whitespace-nowrap tracking-wide">{label}</span>}
+                                <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-300 ${isActive ? 'scale-110 !text-[#000000]' : 'group-hover:scale-110'}`} />
+                                {!collapsed && <span className={`whitespace-nowrap tracking-wide ${isActive ? '!text-[#000000]' : ''}`}>{label}</span>}
                             </>
                         )}
                     </NavLink>
@@ -85,7 +82,7 @@ export default function Sidebar() {
             </nav>
 
             {/* Logout */}
-            <div className={`py-4 border-t border-gray-100 dark:border-white/5 ${collapsed ? 'px-3' : 'px-4'}`}>
+            <div className={`py-4 border-t-0 border-transparent ${collapsed ? 'px-3' : 'px-4'}`}>
                 <button
                     onClick={logout}
                     title={collapsed ? 'Logout' : undefined}

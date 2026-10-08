@@ -21,8 +21,8 @@ const PRODUCTS: Product[] = [
         description: 'Latest flagship smartphone with 6.7" display, 108MP camera, and 5000mAh battery.',
         price: 8000,
         icon: Smartphone,
-        color: 'text-indigo-600 dark:text-indigo-400',
-        bg: 'bg-indigo-50 dark:bg-indigo-900/20',
+        color: 'text-gray-400 dark:text-white',
+        bg: 'bg-[#1a1a1a] dark:bg-[#111]',
         badge: '🔥 Hot',
     },
     {
@@ -31,8 +31,8 @@ const PRODUCTS: Product[] = [
         description: 'Redeem a ₹500 voucher on any partner store purchase — food, fashion, or groceries.',
         price: 1200,
         icon: Tag,
-        color: 'text-emerald-600 dark:text-emerald-400',
-        bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+        color: 'text-gray-400 dark:text-white',
+        bg: 'bg-[#1a1a1a] dark:bg-[#111]',
         badge: '⭐ Popular',
     },
     {
@@ -41,8 +41,8 @@ const PRODUCTS: Product[] = [
         description: 'True wireless earbuds with ANC, 30hr battery life, and IPX5 water resistance.',
         price: 3500,
         icon: Headphones,
-        color: 'text-pink-600 dark:text-pink-400',
-        bg: 'bg-pink-50 dark:bg-pink-900/20',
+        color: 'text-gray-400 dark:text-white',
+        bg: 'bg-[#1a1a1a] dark:bg-[#111]',
     },
     {
         id: 4,
@@ -50,8 +50,8 @@ const PRODUCTS: Product[] = [
         description: 'Premium over-ear headphones with Hi-Res audio, foldable design & 40hr playback.',
         price: 5000,
         icon: Headphones,
-        color: 'text-orange-600 dark:text-orange-400',
-        bg: 'bg-orange-50 dark:bg-orange-900/20',
+        color: 'text-gray-400 dark:text-white',
+        bg: 'bg-[#1a1a1a] dark:bg-[#111]',
     },
     {
         id: 5,
@@ -68,7 +68,7 @@ const PREMIUM_AVATARS = [
     {
         id: 'ninja',
         name: 'Shadow Ninja',
-        description: 'A master of stealth. Equip this avatar to show off your disciplined saving habits.',
+        description: 'A master of sshadow-[#222]th. Equip this avatar to show off your disciplined saving habits.',
         price: 2000,
         image: '/ninja.jpg',
     },
@@ -150,18 +150,18 @@ export default function ShopPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl flex items-center justify-center">
-                        <ShoppingBag className="w-6 h-6 text-yellow-500" />
+                    <div className="w-11 h-11 bg-[#1a1a1a] dark:bg-[#111] rounded-2xl flex items-center justify-center">
+                        <ShoppingBag className="w-6 h-6 text-gray-300" />
                     </div>
                     <div>
                         <h2 className="font-heading font-bold text-2xl text-gray-900 dark:text-white">Coin Shop</h2>
                         <p className="text-sm text-gray-400">Redeem your coins for awesome rewards</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-900/40 px-4 py-2 rounded-2xl">
-                    <Coins className="w-4 h-4 text-yellow-500" />
-                    <span className="font-black text-yellow-600 dark:text-yellow-400">{(user?.coins || 0).toLocaleString()}</span>
-                    <span className="text-xs text-yellow-500">coins</span>
+                <div className="flex items-center gap-2 bg-[#1a1a1a] dark:bg-[#111] border border-[#333] dark:border-[#333] px-4 py-2 rounded-2xl">
+                    <Coins className="w-4 h-4 text-gray-300" />
+                    <span className="font-black text-gray-400 dark:text-white">{(user?.coins || 0).toLocaleString()}</span>
+                    <span className="text-xs text-gray-300">coins</span>
                 </div>
             </div>
 
@@ -197,13 +197,13 @@ export default function ShopPage() {
                             {/* Price + CTA */}
                             <div className="space-y-2">
                                 <div className="flex items-center gap-1.5">
-                                    <Zap className="w-3.5 h-3.5 text-yellow-500" />
-                                    <span className="font-black text-lg text-yellow-600 dark:text-yellow-400">{product.price.toLocaleString()}</span>
+                                    <Zap className="w-3.5 h-3.5 text-gray-300" />
+                                    <span className="font-black text-lg text-gray-400 dark:text-white">{product.price.toLocaleString()}</span>
                                     <span className="text-xs text-gray-400">coins</span>
                                 </div>
 
                                 {feedback && (
-                                    <p className={`text-xs font-semibold ${feedback.success ? 'text-green-500' : 'text-red-500'}`}>
+                                    <p className={`text-xs font-semibold ${feedback.success ? 'text-gray-300' : 'text-red-500'}`}>
                                         {feedback.text}
                                     </p>
                                 )}
@@ -213,9 +213,9 @@ export default function ShopPage() {
                                     disabled={isBought || isLoading}
                                     className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2
                                         ${isBought
-                                            ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-900/40 cursor-default'
+                                            ? 'bg-[#1a1a1a] dark:bg-[#111] text-gray-400 dark:text-white border border-[#333] dark:border-[#333] cursor-default'
                                             : canAfford
-                                                ? 'gradient-bg text-white hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02]'
+                                                ? 'bg-[#ffffff] text-[#000000] hover:shadow-lg hover:shadow-shadow-[#222]-500/30 hover:scale-[1.02]'
                                                 : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
                                         }`}
                                 >
@@ -237,7 +237,7 @@ export default function ShopPage() {
             {/* Premium Avatars Section */}
             <div className="pt-8 mt-8 border-t border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-3 mb-6">
-                    <div className="w-11 h-11 bg-purple-50 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center">
+                    <div className="w-11 h-11 bg-[#1a1a1a] dark:bg-[#111] rounded-2xl flex items-center justify-center">
                         <span className="text-xl">🎭</span>
                     </div>
                     <div>
@@ -257,11 +257,11 @@ export default function ShopPage() {
                             <div key={avatar.id} className={`bg-white dark:bg-gray-900 rounded-[24px] p-5 border border-gray-100 dark:border-gray-800 card-glow flex flex-col gap-4 transition-all ${isBought ? 'opacity-80' : ''}`}>
                                 {/* Image + Badge */}
                                 <div className="flex items-start justify-between relative">
-                                    <div className="w-20 h-20 rounded-2xl overflow-hidden ring-4 ring-purple-100 dark:ring-purple-900/30 flex-shrink-0 bg-gray-100 dark:bg-gray-800 shadow-lg">
+                                    <div className="w-20 h-20 rounded-2xl overflow-hidden ring-4 ring-[#555] dark:ring-[#555] flex-shrink-0 bg-gray-100 dark:bg-gray-800 shadow-lg">
                                         <img src={avatar.image} alt={avatar.name} className="w-full h-full object-cover" />
                                     </div>
                                     {avatar.badge && (
-                                        <span className="text-[10px] font-black uppercase tracking-wider bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2.5 py-1 rounded-full border border-orange-200 dark:border-orange-800/50 absolute -top-2 -right-2 shadow-sm">
+                                        <span className="text-[10px] font-black uppercase tracking-wider bg-[#111] dark:bg-[#111] text-gray-400 dark:text-white px-2.5 py-1 rounded-full border border-[#333] dark:border-[#333] absolute -top-2 -right-2 shadow-sm">
                                             {avatar.badge}
                                         </span>
                                     )}
@@ -276,13 +276,13 @@ export default function ShopPage() {
                                 {/* Price + CTA */}
                                 <div className="space-y-2 mt-2">
                                     <div className="flex items-center justify-center gap-1.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl py-2 border border-gray-100 dark:border-gray-800">
-                                        <Zap className="w-3.5 h-3.5 text-yellow-500" />
-                                        <span className="font-black text-lg text-yellow-600 dark:text-yellow-400">{avatar.price.toLocaleString()}</span>
+                                        <Zap className="w-3.5 h-3.5 text-gray-300" />
+                                        <span className="font-black text-lg text-gray-400 dark:text-white">{avatar.price.toLocaleString()}</span>
                                         <span className="text-xs font-semibold text-gray-400">coins</span>
                                     </div>
 
                                     {feedback && (
-                                        <p className={`text-xs font-semibold text-center ${feedback.success ? 'text-green-500' : 'text-red-500'}`}>
+                                        <p className={`text-xs font-semibold text-center ${feedback.success ? 'text-gray-300' : 'text-red-500'}`}>
                                             {feedback.text}
                                         </p>
                                     )}
@@ -292,9 +292,9 @@ export default function ShopPage() {
                                         disabled={isBought || isLoading}
                                         className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2
                                             ${isBought
-                                                ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-900/40 cursor-default'
+                                                ? 'bg-[#1a1a1a] dark:bg-[#111] text-gray-400 dark:text-white border border-[#333] dark:border-[#333] cursor-default'
                                                 : canAfford
-                                                    ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-[1.02]'
+                                                    ? 'bg-[#111] hover:bg-[#ffffff] text-[#000000] shadow-lg shadow-md hover:shadow-md hover:scale-[1.02]'
                                                     : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
                                             }`}
                                     >

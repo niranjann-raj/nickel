@@ -127,8 +127,8 @@ export default function SettingsPage() {
         <div className="max-w-2xl mx-auto space-y-6">
             {/* Header */}
             <div className="flex items-center gap-3 mb-2">
-                <div className="w-11 h-11 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center">
-                    <User className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <div className="w-11 h-11 bg-[#1a1a1a] dark:bg-[#111] rounded-2xl flex items-center justify-center">
+                    <User className="w-6 h-6 text-gray-400 dark:text-white" />
                 </div>
                 <div>
                     <h2 className="font-heading font-bold text-2xl text-gray-900 dark:text-white">Settings</h2>
@@ -138,7 +138,7 @@ export default function SettingsPage() {
 
             {/* Feedback */}
             {success && (
-                <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-4 py-3 rounded-xl text-sm border border-green-100 dark:border-green-900/40">
+                <div className="flex items-center gap-2 bg-[#1a1a1a] dark:bg-[#111] text-gray-400 dark:text-white px-4 py-3 rounded-xl text-sm border border-[#333] dark:border-[#333]">
                     <CheckCircle className="w-4 h-4 flex-shrink-0" />
                     {success}
                 </div>
@@ -153,11 +153,11 @@ export default function SettingsPage() {
             {/* Profile Card */}
             <div className="bg-white dark:bg-gray-900 rounded-[24px] p-6 border border-gray-100 dark:border-gray-800 card-glow">
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="w-12 h-12 rounded-2xl overflow-hidden ring-2 ring-indigo-400/40 bg-gray-100 dark:bg-gray-800">
+                    <div className="w-12 h-12 rounded-2xl overflow-hidden ring-2 ring-[#555] bg-gray-100 dark:bg-gray-800">
                         <img src={user?.avatar || '/game_avatar.png'} alt="Avatar" className="w-full h-full object-cover" />
                     </div>
                     <div>
-                        <p className="font-bold text-gray-900 dark:text-white">{user?.full_name}</p>
+                        <p className="font-bold bg-gradient-to-r from-gray-400 via-white to-gray-500 text-transparent bg-clip-text">{user?.full_name}</p>
                         <p className="text-sm text-gray-400 flex items-center gap-1"><Mail className="w-3.5 h-3.5" />{user?.email}</p>
                     </div>
                 </div>
@@ -173,7 +173,7 @@ export default function SettingsPage() {
                                     value={(form as any)[key]}
                                     onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                                     placeholder={placeholder}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-[#333] focus:ring-2 focus:ring-[#555] transition-all"
                                 />
                             </div>
                         </div>
@@ -183,7 +183,7 @@ export default function SettingsPage() {
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="mt-5 flex items-center gap-2 gradient-bg text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02] transition-all disabled:opacity-60 mb-6"
+                    className="mt-5 flex items-center justify-center gap-2 bg-[#ffffff] text-[#000000] px-6 py-3 rounded-xl text-sm font-bold hover:bg-gray-200 transition-all disabled:opacity-60 mb-6"
                 >
                     <Save className="w-4 h-4" />
                     {saving ? 'Saving...' : 'Save Profile'}
@@ -220,19 +220,19 @@ export default function SettingsPage() {
                                         onClick={() => handleAvatarSelect(preset)}
                                         className={`w-full aspect-square rounded-2xl overflow-hidden border-2 transition-all p-1 bg-gray-50 dark:bg-gray-800/50 hover:scale-105 ${
                                             isSelected 
-                                                ? (isLegendary ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' : 'border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]') 
-                                                : (isLegendary ? 'border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'border-transparent hover:border-indigo-300 dark:hover:border-indigo-700')
+                                                ? (isLegendary ? 'border-[#333] shadow-[0_0_15px_rgba(16,185,129,0.6)]' : 'border-[#333] shadow-[0_0_15px_rgba(99,102,241,0.4)]') 
+                                                : (isLegendary ? 'border-[#333] shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'border-transparent hover:border-[#333] dark:hover:border-[#333]')
                                         }`}
                                     >
                                         <div className="w-full h-full rounded-xl overflow-hidden bg-white/50 dark:bg-black/20 relative flex items-center justify-center">
                                             <img src={preset} alt="preset" className="w-full h-full object-cover" />
                                             {isLegendary && !isSelected && (
-                                                <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[8px] font-bold px-1 rounded-bl-lg">
+                                                <div className="absolute top-0 right-0 bg-[#ffffff] text-[#000000] text-[8px] font-bold px-1 rounded-bl-lg">
                                                     LEGENDARY
                                                 </div>
                                             )}
                                             {isSelected && (
-                                                <div className={`absolute inset-x-0 bottom-0 text-[9px] text-white font-black uppercase py-0.5 z-10 text-center ${isLegendary ? 'bg-emerald-500' : 'bg-indigo-500'}`}>
+                                                <div className={`absolute inset-x-0 bottom-0 text-[9px] text-white font-black uppercase py-0.5 z-10 text-center ${isLegendary ? 'bg-[#111]' : 'bg-[#111]'}`}>
                                                     Eqpd
                                                 </div>
                                             )}
@@ -249,7 +249,7 @@ export default function SettingsPage() {
             {(user as any)?.has_password && (
             <div className="bg-white dark:bg-gray-900 rounded-[24px] p-6 border border-gray-100 dark:border-gray-800 card-glow">
                 <div className="flex items-center gap-2 mb-5">
-                    <Lock className="w-5 h-5 text-orange-500" />
+                    <Lock className="w-5 h-5 text-gray-300" />
                     <h3 className="font-bold text-gray-900 dark:text-white">Change Password</h3>
                 </div>
 
@@ -268,7 +268,7 @@ export default function SettingsPage() {
                                     value={(pwForm as any)[key]}
                                     onChange={e => setPwForm(f => ({ ...f, [key]: e.target.value }))}
                                     placeholder="••••••••"
-                                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all"
+                                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-[#333] focus:ring-2 focus:ring-[#555] transition-all"
                                 />
                                 {key === 'confirm_password' && (
                                     <button onClick={() => setShowPw(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -283,7 +283,7 @@ export default function SettingsPage() {
                 <button
                     onClick={handlePasswordChange}
                     disabled={savingPw || !pwForm.current_password || !pwForm.new_password}
-                    className="mt-5 flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] transition-all disabled:opacity-60"
+                    className="mt-5 flex items-center justify-center gap-2 bg-[#ffffff] text-[#000000] px-6 py-3 rounded-xl text-sm font-bold hover:bg-gray-200 transition-all disabled:opacity-60"
                 >
                     <Lock className="w-4 h-4" />
                     {savingPw ? 'Changing...' : 'Change Password'}
@@ -302,7 +302,7 @@ export default function SettingsPage() {
                         { label: 'Streak', value: `${user?.current_streak || 0} days` },
                     ].map(({ label, value }) => (
                         <div key={label} className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-3">
-                            <p className="font-black text-lg text-indigo-600 dark:text-indigo-400">{value}</p>
+                            <p className="font-black text-lg text-gray-400 dark:text-white">{value}</p>
                             <p className="text-xs text-gray-400 mt-0.5">{label}</p>
                         </div>
                     ))}

@@ -47,7 +47,7 @@ export default function GoalDetailsPage() {
     }, [id]);
 
     if (loading) {
-        return <div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>;
+        return <div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#333]"></div></div>;
     }
 
     if (!goalData) {
@@ -82,7 +82,7 @@ export default function GoalDetailsPage() {
             {/* Header / Back */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-indigo-500 transition-colors">
+                    <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-300 transition-colors">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <h1 className="text-2xl font-bold font-heading text-gray-900 dark:text-white flex items-center gap-3">
@@ -91,7 +91,7 @@ export default function GoalDetailsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                     {exportMessage && (
-                        <span className={`text-sm font-semibold ${exportMessage.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
+                        <span className={`text-sm font-semibold ${exportMessage.type === 'success' ? 'text-gray-300' : 'text-red-500'}`}>
                             {exportMessage.text}
                         </span>
                     )}
@@ -101,7 +101,7 @@ export default function GoalDetailsPage() {
                         className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
                     >
                         {isExporting ? (
-                            <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                            <div className="w-4 h-4 border-2 border-[#333] border-t-transparent rounded-full animate-spin" />
                         ) : (
                             <Download className="w-4 h-4" />
                         )}
@@ -116,9 +116,9 @@ export default function GoalDetailsPage() {
 
                     {/* Goal Header Card */}
                     <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-8 shadow-sm flex flex-col md:flex-row gap-8 items-center md:items-start relative overflow-hidden">
-                        {goal.status === 'COMPLETED' && <div className="absolute top-0 left-0 right-0 h-2 bg-green-500" />}
+                        {goal.status === 'COMPLETED' && <div className="absolute top-0 left-0 right-0 h-2 bg-[#111]" />}
 
-                        <div className="w-24 h-24 rounded-3xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-5xl shadow-inner flex-shrink-0">
+                        <div className="w-24 h-24 rounded-3xl bg-[#1a1a1a] dark:bg-[#111] flex items-center justify-center text-5xl shadow-inner flex-shrink-0">
                             {goal.icon}
                         </div>
                         <div className="flex-1 text-center md:text-left">
@@ -132,7 +132,7 @@ export default function GoalDetailsPage() {
                                 </div>
                                 <div>
                                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Saved</p>
-                                    <p className="text-xl font-bold text-indigo-500">₹{goal.saved_amount.toLocaleString()}</p>
+                                    <p className="text-xl font-bold text-gray-300">₹{goal.saved_amount.toLocaleString()}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Est. Completion</p>
@@ -145,9 +145,9 @@ export default function GoalDetailsPage() {
                                     <span className="text-gray-900 dark:text-white">{progressCapped}% Completed</span>
                                     <span className="text-gray-500">₹{(goal.target_amount - goal.saved_amount).toLocaleString()} left</span>
                                 </div>
-                                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
+                                <div className="h-3 bg-gray-200 dark:bg-[#333] rounded-full overflow-hidden shadow-inner">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-1000 ${goal.status === 'COMPLETED' ? 'bg-green-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'}`}
+                                        className="h-full rounded-full transition-all duration-1000 bg-[#ffffff]"
                                         style={{ width: `${progressCapped}%` }}
                                     />
                                 </div>
@@ -159,7 +159,7 @@ export default function GoalDetailsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
                             <h3 className="font-bold text-lg font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                                <Target className="w-5 h-5 text-indigo-500" /> Saving Trend
+                                <Target className="w-5 h-5 text-gray-300" /> Saving Trend
                             </h3>
                             <div className="h-48">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -176,7 +176,7 @@ export default function GoalDetailsPage() {
 
                         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
                             <h3 className="font-bold text-lg font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                                <Clock className="w-5 h-5 text-indigo-500" /> Auto Saving Info
+                                <Clock className="w-5 h-5 text-gray-300" /> Auto Saving Info
                             </h3>
                             {auto_saving ? (
                                 <div className="space-y-4">
@@ -186,7 +186,7 @@ export default function GoalDetailsPage() {
                                     </div>
                                     <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                                         <span className="text-sm text-gray-500">Amount</span>
-                                        <span className="font-bold text-indigo-500">₹{auto_saving.amount}</span>
+                                        <span className="font-bold text-gray-300">₹{auto_saving.amount}</span>
                                     </div>
                                     <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                                         <span className="text-sm text-gray-500">Next Run</span>
@@ -202,7 +202,7 @@ export default function GoalDetailsPage() {
                     {/* Timeline / Goal Delay History */}
                     <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
                         <h3 className="font-bold text-lg font-heading mb-6 text-gray-900 dark:text-white flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-indigo-500" /> Completion Timeline
+                            <Calendar className="w-5 h-5 text-gray-300" /> Completion Timeline
                         </h3>
 
                         <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200 dark:before:bg-gray-800">
@@ -227,9 +227,9 @@ export default function GoalDetailsPage() {
 
                             {/* Current */}
                             <div className="relative">
-                                <div className="absolute -left-[31px] bg-white dark:bg-gray-900 border-2 border-indigo-500 w-4 h-4 rounded-full"></div>
-                                <p className="text-sm font-bold text-indigo-500 uppercase tracking-wide">Current Target</p>
-                                <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{new Date(goal.current_completion_date).toLocaleDateString()}</p>
+                                <div className="absolute -left-[31px] bg-white dark:bg-gray-900 border-2 border-[#333] w-4 h-4 rounded-full"></div>
+                                <p className="text-sm font-bold text-gray-300 uppercase tracking-wide">Current Target</p>
+                                <p className="text-lg font-bold text-gray-400 dark:text-white">{new Date(goal.current_completion_date).toLocaleDateString()}</p>
                             </div>
 
                         </div>
@@ -247,7 +247,7 @@ export default function GoalDetailsPage() {
                     {/* Transaction History */}
                     <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
                         <h3 className="font-bold text-lg font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                            <History className="w-5 h-5 text-indigo-500" /> Recent Activity
+                            <History className="w-5 h-5 text-gray-300" /> Recent Activity
                         </h3>
 
                         <div className="space-y-4">
@@ -257,7 +257,7 @@ export default function GoalDetailsPage() {
                                 transactions.slice(0, 5).map((t: any) => (
                                     <div key={t.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                         <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-full ${t.type === 'CREDIT' ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : 'bg-red-100 text-red-600 dark:bg-red-900/30'}`}>
+                                            <div className={`p-2 rounded-full ${t.type === 'CREDIT' ? 'bg-[#111] text-gray-400 dark:bg-[#111]' : 'bg-red-100 text-red-600 dark:bg-red-900/30'}`}>
                                                 {t.type === 'CREDIT' ? <CreditCard className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
                                             </div>
                                             <div>
@@ -265,7 +265,7 @@ export default function GoalDetailsPage() {
                                                 <p className="text-xs text-gray-500">{new Date(t.created_at).toLocaleDateString()}</p>
                                             </div>
                                         </div>
-                                        <div className={`font-bold text-sm ${t.type === 'CREDIT' ? 'text-green-500' : 'text-red-500'}`}>
+                                        <div className={`font-bold text-sm ${t.type === 'CREDIT' ? 'text-gray-300' : 'text-red-500'}`}>
                                             {t.type === 'CREDIT' ? '+' : '-'}₹{t.amount.toLocaleString()}
                                         </div>
                                     </div>
@@ -280,7 +280,7 @@ export default function GoalDetailsPage() {
             <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="font-bold text-lg font-heading text-gray-900 dark:text-white flex items-center gap-2">
-                        <Zap className="w-5 h-5 text-indigo-500" /> Goal AutoPay History
+                        <Zap className="w-5 h-5 text-gray-300" /> Goal AutoPay History
                     </h3>
                     <span className="text-sm font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">Last 30 transactions</span>
                 </div>
@@ -314,7 +314,7 @@ export default function GoalDetailsPage() {
                                         <td className="py-4 px-4 text-sm font-bold text-right text-gray-900 dark:text-white">₹{t.amount.toLocaleString()}</td>
                                         <td className="py-4 px-4 text-center">
                                             {t.status === 'SUCCESS' ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#111] text-gray-500 dark:bg-[#111] dark:text-white">
                                                     <CheckCircle2 className="w-3 h-3" /> Success
                                                 </span>
                                             ) : (
@@ -330,7 +330,7 @@ export default function GoalDetailsPage() {
                                         <td className="py-4 px-4 text-sm font-medium text-right text-gray-500">
                                             {t.remaining_balance != null ? `₹${t.remaining_balance.toLocaleString()}` : '-'}
                                         </td>
-                                        <td className="py-4 px-4 text-sm font-bold text-right text-indigo-500">
+                                        <td className="py-4 px-4 text-sm font-bold text-right text-gray-300">
                                             {t.current_balance != null ? `₹${t.current_balance.toLocaleString()}` : '-'}
                                         </td>
                                     </tr>

@@ -184,7 +184,7 @@ export function NotFoundGlitch({
 }: NotFoundProps) {
   return (
     <NotFoundStage className={className}>
-      <div className="group relative select-none font-mono font-bold leading-none tracking-tighter text-foreground [font-size:clamp(5rem,18vw,11rem)]">
+      <div className="group relative select-none font-mono font-bold leading-none tracking-tighter text-black dark:text-white [font-size:clamp(5rem,18vw,11rem)]">
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0 text-[#ff0040] opacity-0 mix-blend-screen transition-[transform,opacity] duration-150 ease-out group-hover:translate-x-[3px] group-hover:opacity-70 motion-reduce:hidden"
@@ -205,8 +205,8 @@ export function NotFoundGlitch({
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <p className="text-lg font-semibold text-foreground">{title}</p>
-        <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
+        <p className="text-lg font-semibold text-black dark:text-white">{title}</p>
+        <p className="max-w-sm text-sm text-gray-600 dark:text-gray-400">{description}</p>
       </div>
 
       <NotFoundActions

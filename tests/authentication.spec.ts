@@ -11,7 +11,7 @@ test.describe('Authentication', () => {
     await page.getByPlaceholder(/you@example.com/i).fill(testEmail);
     await page.getByPlaceholder(/password/i).fill(testPassword);
     
-    const loginBtn = page.getByRole('button', { name: /Log In|Login|Sign In/i });
+    const loginBtn = page.getByRole('button', { name: /Continue with Email/i });
     await loginBtn.click();
 
     // Give it a moment to load
@@ -23,7 +23,7 @@ test.describe('Authentication', () => {
     await page.goto('/login');
     await page.getByPlaceholder(/you@example.com/i).fill('invalid@example.com');
     await page.getByPlaceholder(/password/i).fill('wrongpassword');
-    await page.getByRole('button', { name: /Log In|Login|Sign In/i }).click();
+    await page.getByRole('button', { name: /Continue with Email/i }).click();
 
     // Verify error message
     const errorMsg = page.locator('text=/Invalid|Incorrect|Error|not found/i').first();
