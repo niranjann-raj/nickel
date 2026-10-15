@@ -267,6 +267,16 @@ def purchase_decision(goal_id):
         
         tx = GoalTransaction(goal_id=goal.id, type='CREDIT', amount=purchase_amount, description=f'Skipped purchase: {purchase_name}')
         db.session.add(tx)
+
+        user = User.query.get(user_id)
+        if user:
+            user.xp += 50
+            user.lifetime_xp += 50
+            try:
+                from routes.dashboard import level_up
+                level_up(user)
+            except Exception:
+                pass
         
     elif decision == 'BUY':
         auto_saving = GoalAutoSaving.query.filter_by(goal_id=goal.id).first()

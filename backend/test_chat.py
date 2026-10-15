@@ -31,13 +31,14 @@ with app.app_context():
 """
         contents = [types.Content(role="user", parts=[types.Part(text="Hello")])]
         
-        print("Calling generate_content...")
-        response = client.models.generate_content(
-            model="gemini-3.5-flash",
+        print("Calling generate_with_gemini...")
+        from routes.dashboard import generate_with_gemini
+        reply_text = generate_with_gemini(
+            client,
             contents=contents,
             config=types.GenerateContentConfig(system_instruction=system_prompt)
         )
-        print("SUCCESS:", response.text)
+        print("SUCCESS:", reply_text)
     except Exception as e:
         print(f"FAILED WITH EXCEPTION: {e}")
         import traceback

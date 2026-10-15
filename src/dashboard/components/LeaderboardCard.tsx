@@ -6,10 +6,11 @@ import { useDashboard } from '../DashboardLayout';
 export default function LeaderboardCard() {
     const { user } = useDashboard();
     const [data, setData] = useState<any>(null);
+    const [timeframe, setTimeframe] = useState<'season' | 'all_time'>('season');
 
     useEffect(() => {
-        api.get('/api/leaderboard').then(setData).catch(() => { });
-    }, [user]);
+        api.get(`/api/leaderboard?timeframe=${timeframe}`).then(setData).catch(() => { });
+    }, [user, timeframe]);
 
     const top3 = data?.leaderboard?.slice(0, 3) ?? [];
     const rest = data?.leaderboard?.slice(3, 10) ?? [];
@@ -24,16 +25,50 @@ export default function LeaderboardCard() {
     return (
         <div className="glass-panel card-glow rounded-[24px] p-8 border border-gray-100 dark:border-white/5 relative overflow-hidden">
             <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-[#111] rounded-full blur-[60px]" />
-            <div className="flex items-center gap-4 mb-6 relative z-10">
-                <div className="w-12 h-12 bg-[#1a1a1a] dark:bg-[#111] rounded-2xl flex items-center justify-center border border-[#333] dark:border-[#333] shadow-sm">
-                    <Trophy className="w-6 h-6 text-gray-300 dark:text-white" />
-                </div>
-                <div>
-                    <h3 className="font-heading font-bold text-xl text-gray-900 dark:text-white tracking-tight">Season Leaderboard</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest bg-gray-100 dark:bg-[#121214] px-2.5 py-0.5 rounded-full border border-transparent dark:border-white/5">Season {data?.season || 1} • Resets Sunday</p>
-                        {data?.your_rank && <p className="text-xs text-gray-500 font-medium">Rank: <span className="text-white font-bold">#{data.your_rank}</span></p>}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[#1a1a1a] dark:bg-[#111] rounded-2xl flex items-center justify-center border border-[#333] dark:border-[#333] shadow-sm">
+                        <Trophy className="w-6 h-6 text-gray-300 dark:text-white" />
                     </div>
+                    <div>
+                        <h3 className="font-heading font-bold text-xl text-gray-900 dark:text-white tracking-tight">
+                            {timeframe === 'season' ? 'Season Leaderboard' : 'All-Time Leaderboard'}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1">
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest bg-gray-100 dark:bg-[#121214] px-2.5 py-0.5 rounded-full border border-transparent dark:border-white/5">
+                                {timeframe === 'season' ? `Season ${data?.season || 1} • Resets Sunday` : 'All-Time Rankings • Lifetime XP'}
+                            </p>
+                            {data?.your_rank && (
+                                <p className="text-xs text-gray-500 font-medium">
+                                    Rank: <span className="text-white font-bold">#{data.your_rank}</span>
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Scope selector */}
+                <div className="flex items-center bg-[#0e0e0e] dark:bg-[#0e0e0e] p-1 rounded-xl border border-[#262626] self-start sm:self-auto shadow-inner">
+                    <button
+                        onClick={() => setTimeframe('season')}
+                        className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                            timeframe === 'season'
+                                ? 'bg-[#262626] text-white border border-[#3e3e3e] shadow-sm'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                        }`}
+                    >
+                        Season {data?.season || 12}
+                    </button>
+                    <button
+                        onClick={() => setTimeframe('all_time')}
+                        className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                            timeframe === 'all_time'
+                                ? 'bg-[#262626] text-white border border-[#3e3e3e] shadow-sm'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                        }`}
+                    >
+                        All-Time
+                    </button>
                 </div>
             </div>
 

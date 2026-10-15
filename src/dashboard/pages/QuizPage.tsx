@@ -56,8 +56,8 @@ export default function QuizPage() {
         try {
             const data = await api.post('/api/submit-quiz', { answers: payload });
             setResult(data); setSubmitted(true);
-            if (data.coins_earned > 0) {
-                addNotification('Quiz Completed!', `You scored ${data.score}/${data.total} and earned ${data.coins_earned} coins.`, 'reward');
+            if (data.coins_earned > 0 || (data.xp_earned && data.xp_earned > 0)) {
+                addNotification('Quiz Completed!', `You scored ${data.score}/${data.total} and earned ${data.coins_earned} coins + ${data.xp_earned || 0} XP.`, 'reward');
             } else {
                 addNotification('Quiz Completed!', `You scored ${data.score}/${data.total}. Improve next time!`, 'info');
             }

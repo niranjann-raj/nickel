@@ -116,6 +116,41 @@ def streak():
     }), 200
 
 
+def generate_with_gemini(client, contents, config=None) -> str:
+    """
+    Generates content using Gemini. Starts with the configured model
+    (defaults to gemini-3.6-flash), and automatically falls back to reliable
+    flash models if high demand (503) or discontinued model (404) errors occur.
+    """
+    preferred_model = os.environ.get('GEMINI_MODEL', 'gemini-3.6-flash')
+    candidate_models = [
+        preferred_model,
+        'gemini-flash-lite-latest',
+        'gemini-3.5-flash-lite',
+        'gemini-flash-latest',
+        'gemini-3.1-flash-lite',
+    ]
+    seen = set()
+    models = [m for m in candidate_models if not (m in seen or seen.add(m))]
+
+    last_error = None
+    for model_name in models:
+        try:
+            kwargs = {'model': model_name, 'contents': contents}
+            if config:
+                kwargs['config'] = config
+            response = client.models.generate_content(**kwargs)
+            if response and response.text:
+                return response.text
+        except Exception as e:
+            last_error = e
+            logging.warning(f"Gemini generation with {model_name} failed: {e}. Attempting fallback...")
+
+    if last_error:
+        raise last_error
+    raise RuntimeError("No response from any Gemini model.")
+
+
 def generate_ai_quiz_questions() -> list:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key or api_key == "your_google_gemini_api_key_here":
@@ -137,11 +172,7 @@ def generate_ai_quiz_questions() -> list:
             "Ensure questions are practical, accurate, and unique."
         )
         
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt
-        )
-        text = response.text.strip()
+        text = generate_with_gemini(client, prompt).strip()
         
         # Strip markdown code fences if present
         if text.startswith("```json"):
@@ -259,6 +290,12 @@ def submit_quiz():
     else:
         coins = 0
 
+    # XP rewards: 20 XP per correct question
+    xp_earned = score * 20
+    user.xp += xp_earned
+    user.lifetime_xp += xp_earned
+    level_up(user)
+
     user.coins += coins
     db.session.add(QuizAttempt(user_id=user.id, score=score, coins_earned=coins))
     db.session.commit()
@@ -267,6 +304,7 @@ def submit_quiz():
         'score': score,
         'total': total,
         'coins_earned': coins,
+        'xp_earned': xp_earned,
         'user': user.to_dict(),
         'results': [
             {
@@ -284,7 +322,14 @@ def submit_quiz():
 @jwt_required()
 def leaderboard():
     user = get_current_user()
-    top_users = User.query.filter_by(is_verified=True).order_by(User.xp.desc()).limit(100).all()
+    timeframe = request.args.get('timeframe', 'season').lower()
+
+    if timeframe == 'all_time':
+        order_col = User.lifetime_xp.desc()
+    else:
+        order_col = User.xp.desc()
+
+    top_users = User.query.filter_by(is_verified=True).order_by(order_col).limit(100).all()
 
     def rank_coins(rank):
         if rank == 1: return 5000
@@ -299,7 +344,9 @@ def leaderboard():
         {
             'rank': i + 1,
             'name': u.full_name,
-            'xp': u.xp,   # display ONLY Season XP
+            'xp': u.lifetime_xp if timeframe == 'all_time' else u.xp,
+            'season_xp': u.xp,
+            'lifetime_xp': u.lifetime_xp,
             'level': u.level,
             'coins': u.coins,
             'rank_coins': rank_coins(i + 1),
@@ -311,12 +358,20 @@ def leaderboard():
     # Find current user's rank if not in top 100
     user_rank = next((e['rank'] for e in board if e['is_current_user']), None)
     if user_rank is None:
-        count = User.query.filter(User.xp > user.xp, User.is_verified == True).count()
+        user_val = user.lifetime_xp if timeframe == 'all_time' else user.xp
+        col = User.lifetime_xp if timeframe == 'all_time' else User.xp
+        count = User.query.filter(col > user_val, User.is_verified == True).count()
         user_rank = count + 1
+
     season_state = GlobalState.query.filter_by(key='current_season_number').first()
     season = int(season_state.value) if season_state else 1
 
-    return jsonify({'leaderboard': board, 'your_rank': user_rank, 'season': season}), 200
+    return jsonify({
+        'leaderboard': board,
+        'your_rank': user_rank,
+        'season': season,
+        'timeframe': timeframe
+    }), 200
 
 
 @dashboard_bp.route('/coins', methods=['GET'])
@@ -476,29 +531,27 @@ Here is the current user's financial context:
 
         contents.append(types.Content(role="user", parts=[types.Part(text=user_message)]))
 
-        response = client.models.generate_content(
-            model="gemini-3.5-flash",
-            contents=contents,
+        reply_text = generate_with_gemini(
+            client,
+            contents,
             config=types.GenerateContentConfig(system_instruction=system_prompt)
         )
 
-        return jsonify({'reply': response.text}), 200
+        return jsonify({'reply': reply_text}), 200
 
     except Exception as e:
         err_str = str(e)
         logging.error(f"Chat error: {e}")
-        if '429' in err_str or 'RESOURCE_EXHAUSTED' in err_str or 'retryDelay' in err_str or 'API_KEY_INVALID' in err_str or 'API_KEY' in err_str:
-            msg_lower = user_message.lower()
-            if 'balance' in msg_lower:
-                bank_account = BankAccount.query.filter_by(user_id=user.id).first()
-                bal = bank_account.balance if bank_account else 0.0
-                reply = f"Your current Dummy Bank balance is ₹{bal:,.2f}."
-            elif 'goal' in msg_lower:
-                reply = "You can view your active goals and their progress directly on your dashboard."
-            else:
-                reply = get_finance_fallback(user_message)
-            return jsonify({'reply': reply, 'fallback': True}), 200
-        return jsonify({'reply': "Nickel AI is temporarily unavailable. Please try again later."}), 200
+        msg_lower = user_message.lower()
+        if 'balance' in msg_lower:
+            bank_account = BankAccount.query.filter_by(user_id=user.id).first()
+            bal = bank_account.balance if bank_account else 0.0
+            reply = f"Your current Dummy Bank balance is ₹{bal:,.2f}."
+        elif 'goal' in msg_lower:
+            reply = "You can view your active goals and their progress directly on your dashboard."
+        else:
+            reply = get_finance_fallback(user_message)
+        return jsonify({'reply': reply, 'fallback': True}), 200
 
 
 @dashboard_bp.route('/spend-coins', methods=['POST'])

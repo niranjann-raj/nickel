@@ -87,7 +87,13 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
                     >
                         <Bell className="w-5 h-5" />
                         {notifications.length > 0 && (
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#111] rounded-full ring-2 ring-white dark:ring-gray-900"></span>
+                            <span 
+                                className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full transition-all"
+                                style={{
+                                    backgroundColor: isDarkMode ? '#ffffff' : '#111111',
+                                    boxShadow: isDarkMode ? '0 0 0 2px #050505' : '0 0 0 2px #ffffff'
+                                }}
+                            />
                         )}
                     </button>
 

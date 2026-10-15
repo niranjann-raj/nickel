@@ -168,10 +168,6 @@ html.dark .card-glow {
   box-shadow: 0px 4px 24px -1px rgba(0, 0, 0, 0.5), inset 0px 1px 0px rgba(255, 255, 255, 0.05);
 }
 
-/* Override the App.tsx wrapper */
-html.dark [class*="bg-white"] {
-  background-color: #09090b;
-}
 
 @layer utilities {
   .gradient-text {

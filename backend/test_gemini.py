@@ -25,11 +25,8 @@ try:
         "Ensure questions are practical, accurate, and unique."
     )
     
-    response = client.models.generate_content(
-        model='gemini-3.5-flash',
-        contents=prompt
-    )
-    raw = response.text.strip()
+    from routes.dashboard import generate_with_gemini
+    raw = generate_with_gemini(client, contents=prompt).strip()
     print(f"Response received: {len(raw)} characters")
     print(f"First 200 chars: {raw[:200]}")
     

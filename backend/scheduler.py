@@ -162,6 +162,17 @@ def process_goal_autopay(auto_saving, today):
             current_balance=goal.saved_amount
         )
         db.session.add(tx)
+
+        # Award 50 XP for daily saving towards goal
+        user = User.query.get(goal.user_id)
+        if user:
+            daily_xp = 50
+            user.xp += daily_xp
+            user.lifetime_xp += daily_xp
+            try:
+                level_up(user)
+            except Exception as e:
+                print(f"level_up error in goal autopay: {e}")
         
         # Update next_run_date
         from datetime import timedelta
