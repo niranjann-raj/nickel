@@ -70,7 +70,7 @@ export default function DashboardLayout() {
     };
 
     useEffect(() => {
-        const isDark = localStorage.getItem('theme') === 'dark';
+        const isDark = localStorage.getItem('theme') !== 'light';
         setIsDarkMode(isDark);
         if (isDark) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
@@ -111,10 +111,10 @@ export default function DashboardLayout() {
 
     return (
         <DashboardContext.Provider value={{ user, refreshUser: fetchUser, loading, notifications, addNotification, clearNotifications }}>
-            <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-transparent text-gray-900 dark:text-gray-100 font-body">
+            <div className="dashboard-layout flex h-screen overflow-hidden text-gray-900 dark:text-gray-100 font-body">
                 <Sidebar />
 
-                <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="dashboard-content-wrapper flex-1 flex flex-col overflow-hidden">
                     <TopNavbar
                         isDarkMode={isDarkMode}
                         onToggleTheme={toggleTheme}

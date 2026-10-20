@@ -68,7 +68,7 @@ const PREMIUM_AVATARS = [
     {
         id: 'ninja',
         name: 'Shadow Ninja',
-        description: 'A master of sshadow-[#222]th. Equip this avatar to show off your disciplined saving habits.',
+        description: 'A master of shadow. Equip this avatar to show off your disciplined saving habits.',
         price: 2000,
         image: '/ninja.jpg',
     },
@@ -215,7 +215,7 @@ export default function ShopPage() {
                                         ${isBought
                                             ? 'bg-[#1a1a1a] dark:bg-[#111] text-gray-400 dark:text-white border border-[#333] dark:border-[#333] cursor-default'
                                             : canAfford
-                                                ? 'bg-[#ffffff] text-[#000000] hover:shadow-lg hover:shadow-shadow-[#222]-500/30 hover:scale-[1.02]'
+                                                ? 'btn-white !bg-white !text-black hover:!bg-gray-100 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]'
                                                 : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
                                         }`}
                                 >
@@ -249,7 +249,7 @@ export default function ShopPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     {PREMIUM_AVATARS.map(avatar => {
                         const canAfford = (user?.coins || 0) >= avatar.price;
-                        const isBought = user?.unlocked_avatars?.includes(avatar.id);
+                        const isBought = user?.unlocked_avatars ? user.unlocked_avatars.split(',').includes(avatar.id) : false;
                         const isLoading = loading === (avatar.id as any);
                         const feedback = msg?.id === (avatar.id as any) ? msg : null;
 
@@ -294,7 +294,7 @@ export default function ShopPage() {
                                             ${isBought
                                                 ? 'bg-[#1a1a1a] dark:bg-[#111] text-gray-400 dark:text-white border border-[#333] dark:border-[#333] cursor-default'
                                                 : canAfford
-                                                    ? 'bg-[#111] hover:bg-[#ffffff] text-[#000000] shadow-lg shadow-md hover:shadow-md hover:scale-[1.02]'
+                                                    ? 'btn-white !bg-white !text-black hover:!bg-gray-100 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]'
                                                     : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
                                             }`}
                                     >

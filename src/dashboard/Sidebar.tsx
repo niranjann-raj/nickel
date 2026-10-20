@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, PiggyBank, Brain, Trophy, Coins, LogOut, Settings, ChevronLeft, ChevronRight, ShoppingBag, Target, Gift } from 'lucide-react';
+import { LayoutDashboard, PiggyBank, Brain, Trophy, LogOut, Settings, PanelLeftOpen, PanelLeftClose, ShoppingBag, Target, Gift } from 'lucide-react';
 
 const links = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Home', end: true },
@@ -26,36 +26,73 @@ export default function Sidebar() {
     return (
         <aside className={`
             relative h-full flex flex-col flex-shrink-0
-            bg-white dark:bg-[#050505]
             border-r-0 border-transparent
-            shadow-2xl transition-all duration-300 ease-in-out z-20
+            shadow-none dark:shadow-none transition-all duration-300 ease-in-out z-20
             ${collapsed ? 'w-20' : 'w-64'}
         `}>
-            {/* Logo */}
-            <div className={`flex items-center h-20 border-b-0 border-transparent flex-shrink-0 overflow-hidden transition-all duration-300 ${collapsed ? 'justify-center px-2' : 'px-6 gap-3'}`}>
-                <div className="w-10 h-10 rounded-xl shadow-glow flex-shrink-0 bg-transparent">
-                    <img src="/logo.png" alt="Nickle Logo" className="w-full h-full rounded-xl object-cover" />
-                </div>
-                {!collapsed && (
-                    <span className="font-heading font-bold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 tracking-tight whitespace-nowrap">
-                        nickel
-                    </span>
+            {/* Logo / Header */}
+            <div className={`flex items-center h-20 border-b-0 border-transparent flex-shrink-0 transition-all duration-300 relative ${collapsed ? 'justify-center px-2' : 'justify-between px-5'}`}>
+                {collapsed ? (
+                    /* Compact mode: Hovering over Nickel logo swaps it with PanelLeftOpen icon + "Open sidebar" pill */
+                    <button
+                        type="button"
+                        onClick={() => setCollapsed(false)}
+                        className="relative group p-2 rounded-2xl flex items-center justify-center focus:outline-none cursor-pointer"
+                        aria-label="Open sidebar"
+                    >
+                        {/* Normal Nickel Logo: visible by default */}
+                        <div className="w-10 h-10 rounded-xl shadow-glow flex-shrink-0 bg-transparent transition-all duration-200 group-hover:opacity-0 group-hover:scale-90">
+                            <img src="/logo.png" alt="Nickel Logo" className="w-full h-full rounded-xl object-cover" />
+                        </div>
+
+                        {/* Hover Logo Icon (Image 2 style): PanelLeftOpen in dark circular container */}
+                        <div className="absolute inset-0 flex items-center justify-center transition-all duration-200 opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100">
+                            <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-[#18181b] border border-gray-300 dark:border-white/10 flex items-center justify-center text-gray-700 dark:text-gray-300 shadow-sm">
+                                <PanelLeftOpen className="w-5 h-5" />
+                            </div>
+                        </div>
+
+                        {/* Hover Tooltip Pill (Image 2 style): "Open sidebar" */}
+                        <div className="absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 z-50 pointer-events-none transition-all duration-200 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0">
+                            <div className="bg-[#ececec] text-[#0d0d0d] text-sm font-medium px-4 py-2 rounded-full shadow-2xl whitespace-nowrap flex items-center tracking-normal border border-black/5 select-none">
+                                Open sidebar
+                            </div>
+                        </div>
+                    </button>
+                ) : (
+                    /* Expanded mode: Logo + "nickel" title + Collapse button */
+                    <>
+                        <NavLink to="/dashboard" className="flex items-center gap-3 overflow-hidden cursor-pointer group">
+                            <div className="w-10 h-10 rounded-xl shadow-glow flex-shrink-0 bg-transparent group-hover:scale-105 transition-transform">
+                                <img src="/logo.png" alt="Nickel Logo" className="w-full h-full rounded-xl object-cover" />
+                            </div>
+                            <span className="font-heading font-bold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 tracking-tight whitespace-nowrap">
+                                nickel
+                            </span>
+                        </NavLink>
+
+                        {/* Collapse sidebar button */}
+                        <div className="relative group">
+                            <button
+                                type="button"
+                                onClick={() => setCollapsed(true)}
+                                className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors focus:outline-none cursor-pointer"
+                                aria-label="Close sidebar"
+                            >
+                                <PanelLeftClose className="w-5 h-5" />
+                            </button>
+                            <div className="absolute right-0 top-full mt-1.5 hidden group-hover:flex items-center pointer-events-none z-50">
+                                <div className="bg-[#ececec] text-[#0d0d0d] text-xs font-semibold px-2.5 py-1 rounded-md shadow-lg whitespace-nowrap border border-black/5">
+                                    Close sidebar
+                                </div>
+                            </div>
+                        </div>
+                    </>
                 )}
             </div>
 
-            {/* Collapse Toggle Button */}
-            <button
-                onClick={() => setCollapsed(c => !c)}
-                className="absolute -right-3.5 top-[72px] z-50 w-7 h-7 bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/10 rounded-full flex items-center justify-center shadow-md dark:shadow-black hover:shadow-shadow-[#222]-500/30 hover:border-[#333] transition-all"
-            >
-                {collapsed
-                    ? <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    : <ChevronLeft className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                }
-            </button>
-
             {/* Nav Links */}
-            <nav className={`flex-1 py-6 space-y-1.5 overflow-y-auto overflow-x-hidden ${collapsed ? 'px-3' : 'px-4'}`}>
+            <nav className={`flex-1 py-6 space-y-1.5 overflow-y-auto overflow-x-hidden bg-transparent border-0 border-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${collapsed ? 'px-3' : 'px-4'}`}>
                 {links.map(({ to, icon: Icon, label, end }) => (
                     <NavLink
                         key={to}
@@ -82,7 +119,7 @@ export default function Sidebar() {
             </nav>
 
             {/* Logout */}
-            <div className={`py-4 border-t-0 border-transparent ${collapsed ? 'px-3' : 'px-4'}`}>
+            <div className={`py-4 bg-transparent border-0 border-transparent ${collapsed ? 'px-3' : 'px-4'}`}>
                 <button
                     onClick={logout}
                     title={collapsed ? 'Logout' : undefined}

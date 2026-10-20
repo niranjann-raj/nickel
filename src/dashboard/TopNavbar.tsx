@@ -34,7 +34,7 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
     }, []);
 
     return (
-        <header className="h-20 flex items-center justify-between px-6 border-b-0 border-transparent bg-white dark:bg-[#050505] flex-shrink-0 z-10 relative">
+        <header className="h-20 flex items-center justify-between px-6 border-b-0 border-transparent bg-transparent flex-shrink-0 z-10 relative">
             <div className="flex items-center gap-4">
                 <button
                     onClick={onMenuClick}

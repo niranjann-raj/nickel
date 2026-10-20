@@ -126,14 +126,57 @@ html.dark #root {
 }
 
 /* Navbar */
-html.dark nav {
+html.dark nav.nav-blur {
   background: rgba(0, 0, 0, 0.85) !important;
   border-color: rgba(38, 38, 38, 0.5) !important;
 }
 
-html.dark nav a,
-html.dark nav span {
+html.dark nav.nav-blur a,
+html.dark nav.nav-blur span {
   color: #d4d4d8;
+}
+
+/* Ensure sidebar nav and sections are uniform and borderless */
+html.dark aside nav {
+  background: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+}
+
+/* ============================================================
+   DASHBOARD LAYOUT - 100% UNIFORM SEAMLESS BACKGROUND
+   ============================================================ */
+.dashboard-layout,
+.dashboard-layout aside,
+.dashboard-layout header,
+.dashboard-layout main,
+.dashboard-layout .dashboard-content-wrapper {
+  background-color: #050505 !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html.dark .dashboard-layout,
+html.dark .dashboard-layout aside,
+html.dark .dashboard-layout header,
+html.dark .dashboard-layout main,
+html.dark .dashboard-layout .dashboard-content-wrapper {
+  background-color: #050505 !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html:not(.dark) .dashboard-layout,
+html:not(.dark) .dashboard-layout aside,
+html:not(.dark) .dashboard-layout header,
+html:not(.dark) .dashboard-layout main,
+html:not(.dark) .dashboard-layout .dashboard-content-wrapper {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 
 /* Cards and sections */
@@ -141,22 +184,35 @@ html.dark section {
   background-color: transparent;
 }
 
-html.dark .bg-gray-50 {
+html.dark .bg-gray-50:not(button):not(.keep-white):not(.dashboard-layout):not(.dashboard-layout *) {
   background-color: #09090b !important;
 }
 
-html.dark .bg-white {
+html.dark .bg-white:not(button):not(.keep-white):not(.dashboard-layout):not(.dashboard-layout *) {
   background-color: #0a0a0a !important;
 }
 
-html.dark h1,
-html.dark h2,
-html.dark h3,
-html.dark h4 {
+html.dark button.bg-white,
+html.dark button.btn-white,
+html.dark .keep-white,
+html.dark .btn-white {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+html.dark button.bg-white:hover,
+html.dark button.btn-white:hover,
+html.dark .keep-white:hover,
+html.dark .btn-white:hover {
+  background-color: #f3f4f6 !important;
+  color: #000000 !important;
+}
+
+html.dark :where(h1, h2, h3, h4) {
   color: #ffffff;
 }
 
-html.dark p {
+html.dark :where(p) {
   color: #a3a3a3;
 }
 
