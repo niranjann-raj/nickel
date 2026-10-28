@@ -1,5 +1,5 @@
 from datetime import date
-from models import db, User, Goal, GoalAutoSaving, BankAccount, Transaction
+from models import db, User, Goal, GoalAutoSaving, TrackerTransaction
 
 def build_nickel_context(user_id: int) -> str:
     """
@@ -10,24 +10,24 @@ def build_nickel_context(user_id: int) -> str:
     if not user:
         return "User context unavailable."
         
-    bank_account = BankAccount.query.filter_by(user_id=user.id).first()
-    balance = bank_account.balance if bank_account and bank_account.balance is not None else 0.0
+    from scheduler import get_user_net_cash_flow
+    net_cash_flow = get_user_net_cash_flow(user.id)
     
     # 1. User Profile Context
     name = user.full_name or user.email.split('@')[0].capitalize()
     
     # Safely handle potential None values
     safe_xp = user.xp or 0
-    safe_streak = user.current_streak or 0
+    safe_streak = user.get_active_streak()
     safe_coins = user.coins or 0
-    safe_total_saved = user.total_saved or 0.0
+    goals_saved = sum(float(g.saved_amount or 0.0) for g in Goal.query.filter_by(user_id=user.id).all())
 
     profile_str = (
         f"USER PROFILE:\n"
         f"- Name: {name}\n"
         f"- Gamification: Level {user.level}, XP {safe_xp}, Streak {safe_streak} days, Coins {safe_coins}\n"
-        f"- Dummy Bank Balance: ₹{balance:,.2f}\n"
-        f"- Total Lifetime Savings: ₹{safe_total_saved:,.2f}\n"
+        f"- Expense Tracker Net Cash Flow: ₹{net_cash_flow:,.2f}\n"
+        f"- Total Saved in Goals: ₹{goals_saved:,.2f}\n"
     )
     
     # 2. Goals Context
@@ -74,12 +74,12 @@ def build_nickel_context(user_id: int) -> str:
         
     goals_str = "ACTIVE GOALS:\n" + ("\n".join(goals_context) if goals_context else "No active goals.\n")
     
-    # 3. Recent Transactions Context
-    recent_txs = Transaction.query.filter_by(user_id=user.id).order_by(Transaction.created_at.desc()).limit(10).all()
+    # 3. Recent Transactions Context (Expense Tracker)
+    recent_txs = TrackerTransaction.query.filter_by(user_id=user.id).order_by(TrackerTransaction.date.desc(), TrackerTransaction.id.desc()).limit(10).all()
     tx_context = []
     for t in recent_txs:
-        date_str = t.created_at.strftime('%Y-%m-%d %H:%M') if t.created_at else "Unknown Date"
-        tx_context.append(f"  * {date_str} - {t.type} of ₹{t.amount:,.2f}: {t.description}")
+        date_str = t.date.strftime('%Y-%m-%d') if t.date else "Unknown Date"
+        tx_context.append(f"  * {date_str} - {t.type} of ₹{float(t.amount or 0):,.2f}: {t.merchant or t.description or 'Expense'}")
         
     # 4. Expense Tracker Spending Context (Current Month)
     tracker_context_str = "EXPENSE TRACKER (Current Month):\n"

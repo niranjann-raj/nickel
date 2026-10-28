@@ -35,6 +35,24 @@ class User(db.Model):
     unlocked_avatars = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+    def get_active_streak(self):
+        from datetime import date, timedelta
+        today = date.today()
+        if self.last_save_date and (self.current_streak or 0) > 0:
+            days_diff = (today - self.last_save_date).days
+            if days_diff > 1:
+                try:
+                    if (self.streak_shields or 0) > 0:
+                        self.streak_shields -= 1
+                        self.last_save_date = today - timedelta(days=1)
+                        db.session.commit()
+                    else:
+                        self.current_streak = 0
+                        db.session.commit()
+                except Exception:
+                    db.session.rollback()
+        return self.current_streak or 0
+
     def to_dict(self):
         n = self.level - 1
         xp_start_of_level = (n * (2000 + (n - 1) * 500)) // 2 if n > 0 else 0
@@ -43,13 +61,9 @@ class User(db.Model):
             current_level_progress = 0
             
         goals_saved = 0.0
-        wallet_balance = 0.0
         try:
-            from models import Goal, SavingsWallet
+            from models import Goal
             goals_saved = db.session.query(db.func.sum(Goal.saved_amount)).filter(Goal.user_id == self.id).scalar() or 0.0
-            wallet = SavingsWallet.query.filter_by(user_id=self.id).first()
-            if wallet and wallet.balance is not None:
-                wallet_balance = float(wallet.balance)
         except Exception:
             pass
             
@@ -65,8 +79,8 @@ class User(db.Model):
             'level': self.level,
             'xp_to_next_level': xp_for_level(self.level),
             'coins': self.coins,
-            'current_streak': self.current_streak,
-            'total_saved': self.total_saved + goals_saved + wallet_balance,
+            'current_streak': self.get_active_streak(),
+            'total_saved': float(goals_saved),
             'age': self.age,
             'phone': self.phone,
             'city': self.city,
@@ -92,19 +106,6 @@ class OtpToken(db.Model):
     purpose = db.Column(db.String(20), nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-
-class Saving(db.Model):
-    __tablename__ = 'savings'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    amount_entered = db.Column(db.Float, nullable=False)
-    saving_level = db.Column(db.String(10), nullable=False)  # easy | medium | hard
-    saved_amount = db.Column(db.Float, nullable=False)
-    xp_earned = db.Column(db.Integer, default=0)
-    streak_bonus_xp = db.Column(db.Integer, default=0)
-    date = db.Column(db.Date, default=lambda: date.today())
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -167,43 +168,6 @@ class Notification(db.Model):
             'is_read': self.is_read,
             'created_at': self.created_at.isoformat()
         }
-
-class BankAccount(db.Model):
-    __tablename__ = 'bank_account'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
-    balance = db.Column(EncryptedFloat, default=0.0)
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-
-class Transaction(db.Model):
-    __tablename__ = 'transactions'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    type = db.Column(db.String(10), nullable=False)  # CREDIT or DEBIT
-    amount = db.Column(EncryptedFloat, nullable=False)
-    description = db.Column(EncryptedString(255))
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-class Autopay(db.Model):
-    __tablename__ = 'autopay'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    level = db.Column(db.String(10), nullable=False)  # EASY, MEDIUM, HARD
-    status = db.Column(db.String(20), default='ACTIVE')  # ACTIVE, PAUSED, USER_PAUSED, FAILED, COMPLETED
-    target_amount = db.Column(db.Float, nullable=False)
-    daily_deduction = db.Column(db.Float, nullable=False)
-    current_day = db.Column(db.Integer, default=0)
-    freeze_days_left = db.Column(db.Integer, default=0)
-    cycle_start_date = db.Column(db.Date, default=lambda: date.today())
-    last_run_date = db.Column(db.Date, nullable=True)
-    manual_pauses = db.Column(db.Integer, default=0)
-
-class SavingsWallet(db.Model):
-    __tablename__ = 'savings_wallet'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
-    balance = db.Column(EncryptedFloat, default=0.0)
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class Goal(db.Model):
     __tablename__ = 'goals'

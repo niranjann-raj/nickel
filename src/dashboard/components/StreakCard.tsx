@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Flame, Zap } from 'lucide-react';
 import { api } from '../api';
+import { useDashboard } from '../DashboardLayout';
 
 export default function StreakCard() {
+    const { user } = useDashboard();
     const [streak, setStreak] = useState<any>(null);
 
     useEffect(() => {
         api.get('/api/streak').then(setStreak).catch(() => { });
     }, []);
 
-    const current = streak?.current_streak ?? 0;
+    const current = user?.current_streak ?? streak?.current_streak ?? 0;
 
     // Visual milestone markers just for context (every 7 days)
     const DISPLAY_CHECKPOINTS = [7, 14, 21, 30, 50];

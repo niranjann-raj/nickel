@@ -8,8 +8,7 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 from models import (
-    db, User, OtpToken, DailySpin, Saving, QuizAttempt, Notification, 
-    BankAccount, Transaction, Autopay, SavingsWallet, Goal, 
+    db, User, OtpToken, DailySpin, QuizAttempt, Notification, Goal, 
     GoalAutoSaving, GoalTransaction, GoalDelayHistory,
     TrackerTransaction, BillUpload, TrackerCategory, TrackerSubscription, CategoryBudget
 )
@@ -358,13 +357,8 @@ def delete_account():
 
         Goal.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         DailySpin.query.filter_by(user_id=user.id).delete(synchronize_session=False)
-        Saving.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         QuizAttempt.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         Notification.query.filter_by(user_id=user.id).delete(synchronize_session=False)
-        BankAccount.query.filter_by(user_id=user.id).delete(synchronize_session=False)
-        Transaction.query.filter_by(user_id=user.id).delete(synchronize_session=False)
-        Autopay.query.filter_by(user_id=user.id).delete(synchronize_session=False)
-        SavingsWallet.query.filter_by(user_id=user.id).delete(synchronize_session=False)
 
         TrackerTransaction.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         BillUpload.query.filter_by(user_id=user.id).delete(synchronize_session=False)

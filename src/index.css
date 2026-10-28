@@ -382,12 +382,15 @@ html.dark .card-glow {
   .video-theme .dark\:bg-gray-800,
   .video-theme .dark\:bg-gray-900,
   .video-theme .dark\:bg-gray-800\/50,
-  .video-theme .gradient-bg-soft,
-  .video-theme footer {
+  .video-theme .gradient-bg-soft {
     background: rgba(0, 0, 0, 0.45) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .video-theme footer {
+    border: none !important;
   }
 }
 

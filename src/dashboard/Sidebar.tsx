@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, PiggyBank, Brain, Trophy, LogOut, Settings, PanelLeftOpen, PanelLeftClose, ShoppingBag, Target, Gift, ReceiptText, Users } from 'lucide-react';
+import { LayoutDashboard, Brain, Trophy, LogOut, Settings, PanelLeftOpen, PanelLeftClose, ShoppingBag, Target, Gift, ReceiptText, Users } from 'lucide-react';
 
 const links = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Home', end: true },
-    { to: '/dashboard/save', icon: PiggyBank, label: 'Save Money' },
     { to: '/dashboard/goals', icon: Target, label: 'Goal Based Saving' },
     { to: '/dashboard/tracker', icon: ReceiptText, label: 'Expense Tracker' },
     { to: '/dashboard/split', icon: Users, label: 'Split Expense' },

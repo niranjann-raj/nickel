@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopNavbar from './TopNavbar';
 import ChatBot from './ChatBot';
@@ -50,6 +50,7 @@ const DashboardContext = createContext<DashboardContextType>({
 export const useDashboard = () => useContext(DashboardContext);
 
 export default function DashboardLayout() {
+    const location = useLocation();
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [user, setUser] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
@@ -77,6 +78,11 @@ export default function DashboardLayout() {
         else document.documentElement.classList.remove('dark');
         fetchUser();
     }, []);
+
+    // Re-sync user profile on navigation to keep streak, coins, and XP 100% updated
+    useEffect(() => {
+        fetchUser();
+    }, [location.pathname]);
 
     const fetchUser = async () => {
         try {

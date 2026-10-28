@@ -49,6 +49,10 @@ def get_goals():
         g_dict['auto_saving'] = a_s.to_dict() if a_s else None
         goals_data.append(g_dict)
 
+    from scheduler import get_user_net_cash_flow
+    net_cash_flow = get_user_net_cash_flow(user_id)
+    user = User.query.get(user_id)
+
     return jsonify({
         'goals': goals_data,
         'summary': {
@@ -57,7 +61,9 @@ def get_goals():
             'total_saved': total_saved,
             'total_remaining': total_remaining,
             'avg_progress': avg_progress,
-            'monthly_saving_rate': monthly_saving
+            'monthly_saving_rate': monthly_saving,
+            'net_cash_flow': net_cash_flow,
+            'current_streak': user.get_active_streak() if user else 0
         }
     }), 200
 
@@ -312,6 +318,16 @@ def purchase_decision(goal_id):
         'goal': goal.to_dict()
     }), 200
 
+@goals_bp.route('/net-cash-flow', methods=['GET'])
+@jwt_required()
+def get_goal_net_cash_flow():
+    user_id = get_jwt_identity()
+    from scheduler import get_user_net_cash_flow
+    net_cash_flow = get_user_net_cash_flow(user_id)
+    return jsonify({
+        'net_cash_flow': net_cash_flow
+    }), 200
+
 @goals_bp.route('/<int:goal_id>/autopay/run', methods=['POST'])
 @jwt_required()
 def run_goal_autopay(goal_id):
@@ -324,15 +340,19 @@ def run_goal_autopay(goal_id):
     if not auto_saving:
         return jsonify({'error': 'No auto-saving configured for this goal'}), 400
         
-    if goal.status != 'ACTIVE':
-        return jsonify({'error': f'Goal is {goal.status}, cannot run autopay'}), 400
+    if goal.status == 'COMPLETED':
+        return jsonify({'error': 'Goal is already completed!'}), 400
+
+    # If paused due to previous insufficient funds, temporarily set to ACTIVE to test the new run
+    if goal.status == 'PAUSED':
+        goal.status = 'ACTIVE'
+        db.session.commit()
         
     from scheduler import process_goal_autopay
     from datetime import date
     
-    # We call the scheduler function directly for manual test
     try:
-        process_goal_autopay(auto_saving, date.today())
+        success, message, tx, current_cash_flow = process_goal_autopay(auto_saving, date.today())
         
         # After execution, fetch latest state to return
         db.session.refresh(goal)
@@ -340,11 +360,28 @@ def run_goal_autopay(goal_id):
         
         latest_tx = GoalTransaction.query.filter_by(goal_id=goal.id, type='GOAL_AUTOPAY').order_by(GoalTransaction.id.desc()).first()
         
+        if not success:
+            return jsonify({
+                'error': message,
+                'message': message,
+                'status': 'FAILED',
+                'available_net_cash_flow': current_cash_flow,
+                'required_amount': auto_saving.amount,
+                'goal': goal.to_dict(),
+                'transaction': latest_tx.to_dict() if latest_tx else None
+            }), 400
+
+        user = User.query.get(user_id)
         return jsonify({
-            'message': 'AutoPay executed',
+            'message': message,
+            'status': 'SUCCESS',
+            'available_net_cash_flow': current_cash_flow,
             'goal': goal.to_dict(),
-            'transaction': latest_tx.to_dict() if latest_tx else None
+            'transaction': latest_tx.to_dict() if latest_tx else None,
+            'current_streak': user.get_active_streak() if user else 0,
+            'user': user.to_dict() if user else None
         }), 200
     except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 

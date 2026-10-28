@@ -1,18 +1,22 @@
 import MatrixLoader from '../../components/ui/MatrixLoader';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Target, Plus, TrendingUp, CheckCircle, PiggyBank, Calendar, AlertTriangle, Play, Pause, Edit3, Trash2, Search, X } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Target, Plus, TrendingUp, CheckCircle, PiggyBank, Calendar, AlertTriangle, Play, Pause, Edit3, Trash2, Search, X, CheckCircle2, ArrowRight, Flame } from 'lucide-react';
 import { api } from '../api';
+import { useDashboard } from '../DashboardLayout';
 import GoalCard from '../components/goals/GoalCard';
 import CreateGoalModal from '../components/goals/CreateGoalModal';
+import StreakCard from '../components/StreakCard';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function GoalsPage() {
     const navigate = useNavigate();
+    const { refreshUser } = useDashboard();
     const [goals, setGoals] = useState<any[]>([]);
     const [summary, setSummary] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [notification, setNotification] = useState<{ type: 'success' | 'error', title: string, message: string } | null>(null);
 
     // Search and Filter State
     const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +38,7 @@ export default function GoalsPage() {
             const data = await api.get('/api/goals/');
             setGoals(data.goals);
             setSummary(data.summary);
+            refreshUser();
         } catch (error) {
             console.error('Failed to fetch goals', error);
         } finally {
@@ -69,16 +74,32 @@ export default function GoalsPage() {
     const handleRunAutopay = async (goalId: number) => {
         try {
             const data = await api.goals.runAutopay(goalId);
-            if (data.transaction && data.transaction.status === 'FAILED') {
-                alert(`AutoPay Failed: ${data.transaction.reason}`);
+            if (data.status === 'FAILED' || (data.transaction && data.transaction.status === 'FAILED')) {
+                const failReason = data.message || data.error || data.transaction?.reason || 'Insufficient Net Cash Flow';
+                setNotification({
+                    type: 'error',
+                    title: 'AutoPay Debit Failed',
+                    message: failReason
+                });
             } else {
-                // Success - the fetchGoals will re-render and animations will play naturally 
-                // due to transition-all on the progress bar in GoalCard
+                const goalName = data.goal?.name || 'Goal';
+                const amt = data.transaction?.amount ?? '';
+                setNotification({
+                    type: 'success',
+                    title: 'AutoPay Debited Successfully',
+                    message: data.message || `Debited ₹${amt} from Expense Tracker Net Cash Flow for '${goalName}'. Logged in Expense Tracker transactions.`
+                });
             }
-            fetchGoals();
+            await fetchGoals();
+            refreshUser();
         } catch (error: any) {
-            alert(error.message || 'Failed to run AutoPay');
-            console.error(error);
+            setNotification({
+                type: 'error',
+                title: 'Insufficient Net Cash Flow',
+                message: error.message || 'AutoPay failed: Insufficient balance in Expense Tracker Net Cash Flow.'
+            });
+            await fetchGoals();
+            refreshUser();
         }
     };
 
@@ -152,9 +173,47 @@ export default function GoalsPage() {
                 </button>
             </div>
 
+            {/* AutoPay Status Banner / Notification */}
+            {notification && (
+                <div className={`p-4 rounded-2xl border flex items-start justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300 ${
+                    notification.type === 'error'
+                        ? 'bg-red-500/10 border-red-500/30 text-red-400'
+                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                }`}>
+                    <div className="flex items-start gap-3">
+                        <div className="mt-0.5">
+                            {notification.type === 'error' ? (
+                                <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                            ) : (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                            )}
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-sm text-white">{notification.title}</h4>
+                            <p className="text-xs mt-0.5 opacity-90 text-zinc-300">{notification.message}</p>
+                            {notification.type === 'error' && (
+                                <Link
+                                    to="/tracker"
+                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 mt-2 hover:underline"
+                                >
+                                    <span>Check Expense Tracker Net Cash Flow</span>
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setNotification(null)}
+                        className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
+
             {/* Summary Cards */}
             {summary && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                     <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-[#1a1a1a] dark:bg-[#111] text-gray-300 flex items-center justify-center">
                             <Target className="w-6 h-6" />
@@ -189,6 +248,42 @@ export default function GoalsPage() {
                         <div>
                             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Monthly Saving</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">₹{summary.monthly_saving_rate.toLocaleString()}</p>
+                        </div>
+                    </div>
+
+                    {/* 5. Net Cash Flow (Linked Funding Source) */}
+                    <Link
+                        to="/tracker"
+                        className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4 hover:border-emerald-500/40 transition-colors group cursor-pointer"
+                        title="Funding source for Goal AutoPay - Click to view in Expense Tracker"
+                    >
+                        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                            <TrendingUp className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-1.5">
+                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Net Cash Flow</p>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400">Linked</span>
+                            </div>
+                            <p className={`text-xl font-bold tracking-tight ${(summary.net_cash_flow ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                ₹{(summary.net_cash_flow ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                        </div>
+                    </Link>
+
+                    {/* 6. Daily Saving Streak */}
+                    <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center">
+                            <Flame className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-1.5">
+                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Daily Streak</p>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400">+50 XP</span>
+                            </div>
+                            <p className="text-xl font-bold tracking-tight text-orange-400">
+                                {summary.current_streak ?? 0} {(summary.current_streak ?? 0) === 1 ? 'day' : 'days'}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -309,8 +404,9 @@ export default function GoalsPage() {
                     )}
                 </div>
 
-                {/* Right Column - Charts & Insights */}
+                {/* Right Column - Streak & Progress */}
                 <div className="space-y-6">
+                    <StreakCard />
                     <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
                         <h3 className="font-bold text-lg font-heading mb-6 text-gray-900 dark:text-white flex items-center gap-2">
                             <TrendingUp className="w-5 h-5 text-gray-300" /> Progress Overview
@@ -344,6 +440,7 @@ export default function GoalsPage() {
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 onSave={handleCreateGoal}
+                netCashFlow={summary?.net_cash_flow ?? 0}
             />
 
             {/* Custom Action Modal */}

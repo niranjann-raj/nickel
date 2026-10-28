@@ -5,15 +5,10 @@ import { AnimatedCounter } from './ui/AnimatedCounter';
 
 export default function HowItWorksSection() {
     return (
-        <section id="spotlight" className="py-24 md:py-32 bg-black text-white border-t border-zinc-900">
+        <section id="spotlight" className="py-24 md:py-32 bg-black text-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-14 observe-animate">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-semibold tracking-wider text-zinc-300 uppercase mb-6">
-                        <span className="w-1.5 h-1.5 rounded-sm bg-emerald-400"></span>
-                        <span>Featured Spotlight</span>
-                    </div>
-
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white max-w-3xl leading-[1.15]">
                             We&apos;ve helped 50,000+ modern savers replace manual chaos with automated financial clarity

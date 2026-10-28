@@ -18,7 +18,6 @@ import NotFoundGlitchPreview from './components/ui/demo';
 // Dashboard
 import DashboardLayout from './dashboard/DashboardLayout';
 import DashboardHome from './dashboard/pages/DashboardHome';
-import SavePage from './dashboard/pages/SavePage';
 import QuizPage from './dashboard/pages/QuizPage';
 import LeaderboardPage from './dashboard/pages/LeaderboardPage';
 import CoinsPage from './dashboard/pages/CoinsPage';
@@ -79,7 +78,6 @@ function App() {
                     </ProtectedRoute>
                 }>
                     <Route index element={<DashboardHome />} />
-                    <Route path="save" element={<SavePage />} />
                     <Route path="quiz" element={<QuizPage />} />
                     <Route path="leaderboard" element={<LeaderboardPage />} />
                     <Route path="coins" element={<CoinsPage />} />

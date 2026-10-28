@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Target, Smartphone, Laptop, Bike, Plane, Car, GraduationCap, PiggyBank } from 'lucide-react';
+import { X, Target, Flame } from 'lucide-react';
 
 const PREDEFINED_GOALS = [
     { id: 'mobile', name: 'Buy a Mobile', icon: '📱', desc: 'Upgrade to the latest smartphone.', defaultTarget: 50000 },
@@ -11,10 +11,10 @@ const PREDEFINED_GOALS = [
     { id: 'emergency', name: 'Emergency Fund', icon: '💰', desc: 'A safety net for unexpected situations.', defaultTarget: 100000 },
 ];
 
-export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
+export default function CreateGoalModal({ isOpen, onClose, onSave, netCashFlow = 0 }: any) {
     const [step, setStep] = useState(1); // 1: Choose Type, 2: Configure, 3: Auto Saving
-    const [goalType, setGoalType] = useState('predefined'); // predefined | custom
-    const [selectedPredefined, setSelectedPredefined] = useState<any>(null);
+    const [, setGoalType] = useState('predefined'); // predefined | custom
+    const [, setSelectedPredefined] = useState<any>(null);
     
     // Form Data
     const [name, setName] = useState('');
@@ -185,7 +185,18 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300">Saving Frequency</label>
+                                <div className="flex items-center justify-between mb-3">
+                                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Saving Frequency</label>
+                                    {freq === 'DAILY' ? (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                                            <Flame className="w-3 h-3" /> Streak (+50 XP/day)
+                                        </span>
+                                    ) : (
+                                        <span className="text-[11px] text-gray-400">
+                                            Set Daily to earn streak XP
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="grid grid-cols-4 gap-2">
                                     {['DAILY', 'WEEKLY', 'MONTHLY', 'CUSTOM'].map(f => (
                                         <button 
@@ -197,6 +208,16 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
                                         </button>
                                     ))}
                                 </div>
+                                {freq === 'DAILY' ? (
+                                    <p className="mt-2 text-xs text-orange-400/90 bg-orange-500/10 p-2.5 rounded-xl border border-orange-500/20 flex items-center gap-1.5">
+                                        <Flame className="w-3.5 h-3.5 shrink-0" />
+                                        <span><strong>Daily Streak Eligible:</strong> Each day AutoPay debits from Net Cash Flow, you maintain your streak and earn +50 XP!</span>
+                                    </p>
+                                ) : (
+                                    <p className="mt-2 text-[11px] text-gray-400">
+                                        ℹ️ Streak tracking and the +50 XP/day bonus only apply when frequency is set to Daily.
+                                    </p>
+                                )}
                             </div>
 
                             {freq === 'CUSTOM' && (
@@ -214,6 +235,32 @@ export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2">You can accept the AI recommendation or enter your own amount.</p>
                             </div>
+
+                            {/* Funding Source Card */}
+                            <div className="bg-gray-50 dark:bg-gray-800/60 p-4 rounded-2xl border border-gray-200 dark:border-gray-700/60 flex items-center justify-between">
+                                <div>
+                                    <span className="text-[11px] uppercase font-semibold text-gray-400 tracking-wider">Funding Source</span>
+                                    <p className="text-sm font-bold text-gray-900 dark:text-white">Expense Tracker Net Cash Flow</p>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[11px] text-gray-400 block">Available Surplus</span>
+                                    <p className={`text-sm font-bold ${netCashFlow > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                        ₹{Number(netCashFlow).toLocaleString()}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {parseFloat(autoAmount || '0') > netCashFlow && (
+                                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start gap-2">
+                                    <span className="text-base leading-none">⚠️</span>
+                                    <div>
+                                        <p className="font-semibold">AutoPay exceeds current Net Cash Flow</p>
+                                        <p className="text-amber-400/80 mt-0.5">
+                                            Your AutoPay amount is ₹{parseFloat(autoAmount || '0').toLocaleString()}, but available surplus is ₹{Number(netCashFlow).toLocaleString()}. AutoPay debits directly from your Net Cash Flow and will automatically pause if balance is insufficient.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

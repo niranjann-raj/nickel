@@ -43,24 +43,9 @@ export const api = {
         apiFetch(path, { method: 'DELETE', ...(body ? { body: JSON.stringify(body) } : {}) }),
     upload: (path: string, formData: FormData) => apiUpload(path, formData),
         
-    // Bank & Autopay endpoints
-    bank: {
-        getBalance: () => apiFetch('/api/bank/balance', { method: 'GET' }),
-        getTransactions: (page = 1) => apiFetch(`/api/bank/transactions?page=${page}`, { method: 'GET' }),
-        deposit: (amount: number, description?: string) => apiFetch('/api/bank/deposit', { method: 'POST', body: JSON.stringify({ amount, description }) }),
-        edit: (balance: number) => apiFetch('/api/bank/edit', { method: 'POST', body: JSON.stringify({ balance }) }),
-    },
-    autopay: {
-        start: (level: string) => apiFetch('/api/autopay/start', { method: 'POST', body: JSON.stringify({ level }) }),
-        pause: () => apiFetch('/api/autopay/pause', { method: 'POST' }),
-        resume: () => apiFetch('/api/autopay/resume', { method: 'POST' }),
-        stop: () => apiFetch('/api/autopay/stop', { method: 'POST' }),
-        getStatus: () => apiFetch('/api/autopay/status', { method: 'GET' }),
-        getWallet: () => apiFetch('/api/autopay/wallet', { method: 'GET' }),
-        simulateDay: () => apiFetch('/api/autopay/simulate-day', { method: 'POST' }),
-    },
     goals: {
         runAutopay: (goalId: number) => apiFetch(`/api/goals/${goalId}/autopay/run`, { method: 'POST' }),
+        getNetCashFlow: () => apiFetch('/api/goals/net-cash-flow', { method: 'GET' }),
     },
     gamification: {
         spinStatus: () => apiFetch('/api/gamification/spin/status', { method: 'GET' }),

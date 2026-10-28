@@ -13,15 +13,10 @@ export default function FeaturesSection() {
     ] as const;
 
     return (
-        <section id="features" className="py-24 md:py-32 bg-black text-white border-t border-zinc-900">
+        <section id="features" className="py-24 md:py-32 bg-black text-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-14 observe-animate">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-semibold tracking-wider text-zinc-300 uppercase mb-6">
-                        <span className="w-1.5 h-1.5 rounded-sm bg-emerald-400"></span>
-                        <span>Core Features</span>
-                    </div>
-
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         <div className="lg:col-span-7">
                             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white leading-[1.15]">

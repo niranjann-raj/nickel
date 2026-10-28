@@ -1,4 +1,4 @@
-import { Target, Play, Pause, Edit3, Trash2, Calendar, TrendingUp, Zap } from 'lucide-react';
+import { Play, Pause, Edit3, Trash2, Calendar, TrendingUp, Zap, Flame } from 'lucide-react';
 
 export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRunAutopay }: any) {
     const progress = goal.target_amount > 0 ? (goal.saved_amount / goal.target_amount) * 100 : 0;
@@ -31,10 +31,13 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
                         </div>
                     </div>
                     {/* Status Badge */}
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${isCompleted ? 'bg-[#111] text-gray-500 dark:bg-[#111] dark:text-white' :
-                            goal.status === 'PAUSED' ? 'bg-[#111] text-gray-500 dark:bg-[#111] dark:text-white' :
-                                'bg-[#111] text-gray-500 dark:bg-[#111] dark:text-white'
-                        }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        isCompleted
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : goal.status === 'PAUSED'
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            : 'bg-white/10 text-gray-300 border border-white/10'
+                    }`}>
                         {goal.status}
                     </span>
                 </div>
@@ -54,8 +57,14 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
                 {/* AutoPay Info */}
                 {goal.auto_saving && (
                     <div className="mb-4 bg-[#1a1a1a]/50 dark:bg-[#111] rounded-xl p-3 flex justify-between items-center text-xs">
-                        <div className="text-gray-500 dark:text-gray-400">
-                            AutoPay: <span className="font-bold text-gray-300">{goal.auto_saving.frequency}</span>
+                        <div className="text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                            <span>AutoPay:</span>
+                            <span className="font-bold text-gray-300">{goal.auto_saving.frequency}</span>
+                            {goal.auto_saving.frequency === 'DAILY' && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-500/15 text-orange-400 border border-orange-500/20" title="Maintains Daily Streak (+50 XP/day)">
+                                    <Flame className="w-2.5 h-2.5" /> Streak
+                                </span>
+                            )}
                         </div>
                         <div className="font-bold text-gray-900 dark:text-white">
                             ₹{goal.auto_saving.amount}
@@ -92,7 +101,7 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
                         <button
                             onClick={() => onRunAutopay(goal.id)}
                             className="col-span-1 py-3 rounded-xl bg-[#ffffff] text-[#000000] font-bold hover:bg-[#111] transition-colors shadow-sm shadow-shadow-[#222]-500/20 flex items-center justify-center gap-2"
-                            title="Test AutoPay Manually"
+                            title="Debits from Expense Tracker Net Cash Flow"
                         >
                             <Zap className="w-4 h-4" /> Run
                         </button>

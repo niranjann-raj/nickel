@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 export default function CtaSection() {
     return (
-        <section id="cta" className="py-24 md:py-32 bg-black text-white border-t border-zinc-900 relative overflow-hidden">
+        <section id="cta" className="py-24 md:py-32 bg-black text-white relative overflow-hidden">
             {/* Subtle monochrome ambient glow */}
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-zinc-800/20 blur-[140px] rounded-full"></div>

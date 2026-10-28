@@ -7,7 +7,7 @@ from datetime import datetime, timezone, date, timedelta
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from models import db, User, Saving, Quiz, QuizAttempt, xp_for_level, GlobalState, Notification, BankAccount, Transaction, Goal
+from models import db, User, Quiz, QuizAttempt, xp_for_level, GlobalState, Notification, Goal
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -107,9 +107,11 @@ def streak():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'User not found'}), 404
-    next_checkpoint = next((c for c in [7, 14, 21, 30, 50] if c > user.current_streak), None)
+
+    active_streak = user.get_active_streak()
+    next_checkpoint = next((c for c in [7, 14, 21, 30, 50] if c > active_streak), None)
     return jsonify({
-        'current_streak': user.current_streak,
+        'current_streak': active_streak,
         'last_save_date': str(user.last_save_date) if user.last_save_date else None,
         'xp_per_day': 50,
         'next_checkpoint': next_checkpoint,
@@ -554,10 +556,10 @@ Here is the current user's financial context:
         err_str = str(e)
         logging.error(f"Chat error: {e}")
         msg_lower = user_message.lower()
-        if 'balance' in msg_lower:
-            bank_account = BankAccount.query.filter_by(user_id=user.id).first()
-            bal = bank_account.balance if bank_account else 0.0
-            reply = f"Your current Dummy Bank balance is ₹{bal:,.2f}."
+        if 'balance' in msg_lower or 'cash flow' in msg_lower:
+            from scheduler import get_user_net_cash_flow
+            cash_flow = get_user_net_cash_flow(user.id)
+            reply = f"Your current Expense Tracker Net Cash Flow balance is ₹{cash_flow:,.2f}."
         elif 'goal' in msg_lower:
             reply = "You can view your active goals and their progress directly on your dashboard."
         else:
@@ -590,7 +592,6 @@ def spend_coins():
 @dashboard_bp.route('/buy-avatar', methods=['POST'])
 @jwt_required()
 def buy_avatar():
-    from models import Transaction
     user = get_current_user()
     if not user:
         return jsonify({'error': 'User not found'}), 404
@@ -614,14 +615,6 @@ def buy_avatar():
     user.coins -= price
     avatars.append(avatar_id)
     user.unlocked_avatars = ','.join(avatars)
-
-    tx = Transaction(
-        user_id=user.id,
-        type='DEBIT',
-        amount=0,
-        description=f"Spent {price} coins to unlock avatar"
-    )
-    db.session.add(tx)
     db.session.commit()
     
     return jsonify({'success': True, 'coins': user.coins, 'unlocked_avatars': user.unlocked_avatars}), 200
@@ -630,36 +623,61 @@ def buy_avatar():
 @dashboard_bp.route('/savings-history', methods=['GET'])
 @jwt_required()
 def savings_history():
-    from models import Transaction
+    from models import Goal, GoalTransaction
+    from datetime import date, timedelta
     user = get_current_user()
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    thirty_days_ago = date.today() - timedelta(days=30)
-    savings = Transaction.query.filter(
-        Transaction.user_id == user.id,
-        Transaction.type == 'DEBIT',
-        Transaction.created_at >= thirty_days_ago
-    ).order_by(Transaction.created_at.asc()).all()
+    today = date.today()
+    thirty_days_ago = today - timedelta(days=30)
+
+    # Fetch user's goals and total money saved in goals
+    user_goals = Goal.query.filter_by(user_id=user.id).all()
+    user_goal_ids = [g.id for g in user_goals]
+    total_goal_saved = sum(float(g.saved_amount or 0.0) for g in user_goals)
 
     daily_totals = {}
-    for s in savings:
-        if s.created_at:
-            date_str = s.created_at.strftime('%Y-%m-%d')
-            daily_totals[date_str] = daily_totals.get(date_str, 0) + s.amount
+    total_month_saved = 0.0
 
+    if user_goal_ids:
+        goal_txs = GoalTransaction.query.filter(
+            GoalTransaction.goal_id.in_(user_goal_ids),
+            GoalTransaction.created_at >= thirty_days_ago
+        ).order_by(GoalTransaction.created_at.asc()).all()
+
+        for tx in goal_txs:
+            is_saving = (
+                (tx.type == 'GOAL_AUTOPAY' and tx.status == 'SUCCESS') or
+                (tx.type == 'CREDIT')
+            )
+            if is_saving and tx.amount and tx.amount > 0:
+                date_str = tx.created_at.strftime('%Y-%m-%d')
+                amt = float(tx.amount)
+                daily_totals[date_str] = daily_totals.get(date_str, 0.0) + amt
+                total_month_saved += amt
+
+    starting_balance = max(0.0, total_goal_saved - total_month_saved)
+    running = starting_balance
     history = []
     for i in range(30, -1, -1):
-        day = date.today() - timedelta(days=i)
+        day = today - timedelta(days=i)
         day_str = day.strftime('%Y-%m-%d')
-        label = day.strftime('%d %b')  # e.g., '25 Mar'
+        label = day.strftime('%d %b')
+        amt = round(daily_totals.get(day_str, 0.0), 2)
+        running += amt
         history.append({
             'date': day_str,
             'label': label,
-            'amount': round(daily_totals.get(day_str, 0), 2)
+            'amount': amt,
+            'cumulative': round(running, 2)
         })
 
-    return jsonify({'history': history}), 200
+    return jsonify({
+        'history': history,
+        'total_month_saved': round(total_month_saved, 2),
+        'total_goal_saved': round(total_goal_saved, 2)
+    }), 200
 
 @dashboard_bp.route('/notifications', methods=['GET'])
 @jwt_required()

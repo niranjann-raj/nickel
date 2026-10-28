@@ -1,8 +1,9 @@
 import MatrixLoader from '../../components/ui/MatrixLoader';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Target, Calendar, Clock, History, CreditCard, ShoppingCart, Activity, Zap, CheckCircle2, XCircle, FileText, Download } from 'lucide-react';
+import { ArrowLeft, Target, Calendar, Clock, History, CreditCard, ShoppingCart, Zap, CheckCircle2, XCircle, Download, Flame } from 'lucide-react';
 import { api } from '../api';
+import { useDashboard } from '../DashboardLayout';
 import { generateGoalSummaryPDF } from '../../utils/pdfGenerator';
 import FutureImpactSimulator from '../components/goals/FutureImpactSimulator';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -10,10 +11,14 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 export default function GoalDetailsPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { refreshUser } = useDashboard();
     const [goalData, setGoalData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
     const [exportMessage, setExportMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [netCashFlow, setNetCashFlow] = useState<number | null>(null);
+    const [runningAutopay, setRunningAutopay] = useState(false);
+    const [autopayFeedback, setAutopayFeedback] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     const handleExport = () => {
         setIsExporting(true);
@@ -34,12 +39,39 @@ export default function GoalDetailsPage() {
 
     const fetchGoal = async () => {
         try {
-            const data = await api.get(`/api/goals/${id}`);
+            const [data, ncfData] = await Promise.all([
+                api.get(`/api/goals/${id}`),
+                api.goals.getNetCashFlow().catch(() => ({ net_cash_flow: 0 }))
+            ]);
             setGoalData(data);
+            if (ncfData && typeof ncfData.net_cash_flow === 'number') {
+                setNetCashFlow(ncfData.net_cash_flow);
+            }
+            refreshUser();
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRunAutopay = async () => {
+        if (!goalData?.id || runningAutopay) return;
+        setRunningAutopay(true);
+        setAutopayFeedback(null);
+        try {
+            const res = await api.goals.runAutopay(goalData.id);
+            setAutopayFeedback({ type: 'success', text: res.message || 'AutoPay executed successfully! Debited from Expense Tracker Net Cash Flow.' });
+            await fetchGoal();
+            refreshUser();
+        } catch (err: any) {
+            const errMsg = err?.message || 'Failed to run AutoPay';
+            setAutopayFeedback({ type: 'error', text: errMsg });
+            await fetchGoal();
+            refreshUser();
+        } finally {
+            setRunningAutopay(false);
+            setTimeout(() => setAutopayFeedback(null), 7000);
         }
     };
 
@@ -181,22 +213,72 @@ export default function GoalDetailsPage() {
                         </div>
 
                         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
-                            <h3 className="font-bold text-lg font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                                <Clock className="w-5 h-5 text-gray-300" /> Auto Saving Info
-                            </h3>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-lg font-heading text-gray-900 dark:text-white flex items-center gap-2">
+                                    <Clock className="w-5 h-5 text-gray-300" /> Auto Saving Info
+                                </h3>
+                                {auto_saving && goal.status !== 'COMPLETED' && (
+                                    <button
+                                        onClick={handleRunAutopay}
+                                        disabled={runningAutopay}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-black font-bold text-xs rounded-xl hover:bg-gray-200 transition-colors shadow-sm disabled:opacity-50"
+                                        title="Debits directly from Expense Tracker Net Cash Flow"
+                                    >
+                                        <Zap className="w-3.5 h-3.5" />
+                                        {runningAutopay ? 'Running...' : 'Run AutoPay'}
+                                    </button>
+                                )}
+                            </div>
+
+                            {autopayFeedback && (
+                                <div className={`mb-4 p-3 rounded-xl text-xs flex items-start gap-2 ${
+                                    autopayFeedback.type === 'success'
+                                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                                        : 'bg-red-500/10 border border-red-500/30 text-red-400'
+                                }`}>
+                                    {autopayFeedback.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /> : <XCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+                                    <div>
+                                        <p className="font-semibold">{autopayFeedback.type === 'success' ? 'AutoPay Debited' : 'AutoPay Error'}</p>
+                                        <p className="mt-0.5">{autopayFeedback.text}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {auto_saving ? (
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                                         <span className="text-sm text-gray-500">Frequency</span>
                                         <span className="font-bold">{auto_saving.frequency}</span>
                                     </div>
                                     <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                                        <span className="text-sm text-gray-500">Daily Streak</span>
+                                        {auto_saving.frequency === 'DAILY' ? (
+                                            <span className="inline-flex items-center gap-1 font-bold text-xs text-orange-400">
+                                                <Flame className="w-3.5 h-3.5" /> Active (+50 XP/day)
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-gray-400">
+                                                Inactive (Requires Daily frequency)
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                                         <span className="text-sm text-gray-500">Amount</span>
-                                        <span className="font-bold text-gray-300">₹{auto_saving.amount}</span>
+                                        <span className="font-bold text-gray-300">₹{auto_saving.amount?.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                                        <span className="text-sm text-gray-500">Funding Source</span>
+                                        <span className="font-bold text-xs text-gray-900 dark:text-white">Expense Tracker Net Cash Flow</span>
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                                        <span className="text-sm text-gray-500">Surplus Balance</span>
+                                        <span className={`font-bold ${netCashFlow != null && netCashFlow >= (auto_saving.amount || 0) ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                            {netCashFlow != null ? `₹${netCashFlow.toLocaleString()}` : '-'}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                                         <span className="text-sm text-gray-500">Next Run</span>
-                                        <span className="font-bold">{new Date(auto_saving.next_run_date).toLocaleDateString()}</span>
+                                        <span className="font-bold">{auto_saving.next_run_date ? new Date(auto_saving.next_run_date).toLocaleDateString() : 'TBD'}</span>
                                     </div>
                                 </div>
                             ) : (
@@ -301,7 +383,7 @@ export default function GoalDetailsPage() {
                                 <th className="pb-4 font-semibold px-4 text-center">Status</th>
                                 <th className="pb-4 font-semibold px-4">Source</th>
                                 <th className="pb-4 font-semibold px-4 text-right">Remaining Goal</th>
-                                <th className="pb-4 font-semibold px-4 text-right">Current Balance</th>
+                                <th className="pb-4 font-semibold px-4 text-right">Net Cash Flow Available</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -332,7 +414,7 @@ export default function GoalDetailsPage() {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="py-4 px-4 text-sm text-gray-500">{t.source || 'Dummy Bank'}</td>
+                                        <td className="py-4 px-4 text-sm text-gray-500">{t.source || 'Net Cash Flow'}</td>
                                         <td className="py-4 px-4 text-sm font-medium text-right text-gray-500">
                                             {t.remaining_balance != null ? `₹${t.remaining_balance.toLocaleString()}` : '-'}
                                         </td>
