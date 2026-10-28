@@ -1,8 +1,15 @@
 import { Instagram, Twitter, Mail } from 'lucide-react';
+import HalftoneWordmarkFooter from './ui/halftone-wordmark-footer';
 
 export default function Footer() {
     return (
-        <footer className="bg-gray-900 dark:bg-black py-16 relative overflow-hidden">
+        <HalftoneWordmarkFooter
+            wordmark="nickel"
+            preset="night"
+            palette={{ background: "#000000" }}
+            crop={0.2}
+            className="py-16 relative overflow-hidden"
+        >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                     <div className="md:col-span-2">
@@ -32,9 +39,8 @@ export default function Footer() {
                         <h4 className="font-heading font-bold text-white mb-6 uppercase tracking-wider text-sm">Product</h4>
                         <ul className="space-y-4">
                             <li><a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">Features</a></li>
-                            <li><a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors text-sm">How it Works</a></li>
-                            <li><a href="#tech" className="text-gray-400 hover:text-white transition-colors text-sm">Technology</a></li>
-                            <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Pricing</a></li>
+                            <li><a href="#spotlight" className="text-gray-400 hover:text-white transition-colors text-sm">Spotlight</a></li>
+                            <li><a href="#faq" className="text-gray-400 hover:text-white transition-colors text-sm">FAQ</a></li>
                         </ul>
                     </div>
 
@@ -53,7 +59,7 @@ export default function Footer() {
                     </div>
                 </div>
 
-                <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 mb-16 md:mb-24">
+                <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 mb-20 md:mb-32">
                     <p className="text-gray-500 text-sm">
                         © {new Date().getFullYear()} nickle Inc. All rights reserved.
                     </p>
@@ -62,13 +68,6 @@ export default function Footer() {
                     </div>
                 </div>
             </div>
-
-            {/* Watermark text at the very bottom */}
-            <div className="absolute bottom-0 left-0 w-full flex justify-center pointer-events-none select-none overflow-hidden translate-y-[20%] md:translate-y-[25%] opacity-50 dark:opacity-100">
-                <span className="font-heading font-black text-[25vw] md:text-[22vw] text-gray-800 dark:text-white/[0.03] leading-none tracking-tighter whitespace-nowrap">
-                    nickel
-                </span>
-            </div>
-        </footer>
+        </HalftoneWordmarkFooter>
     );
 }

@@ -14,6 +14,8 @@ from routes.bank import bank_bp
 from routes.autopay import autopay_bp
 from routes.goals import goals_bp
 from routes.gamification import gamification_bp
+from routes.tracker import tracker_bp
+from routes.split import split_bp
 from scheduler import start_scheduler
 
 def create_app():
@@ -38,6 +40,8 @@ def create_app():
     app.register_blueprint(autopay_bp, url_prefix='/api/autopay')
     app.register_blueprint(goals_bp, url_prefix='/api/goals')
     app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
+    app.register_blueprint(tracker_bp, url_prefix='/api/tracker')
+    app.register_blueprint(split_bp, url_prefix='/api/split')
 
     # Create tables
     with app.app_context():

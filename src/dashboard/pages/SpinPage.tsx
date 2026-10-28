@@ -1,3 +1,4 @@
+import MatrixLoader from '../../components/ui/MatrixLoader';
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { useDashboard } from '../DashboardLayout';
@@ -182,7 +183,12 @@ export default function SpinPage() {
 
                 {/* Spin Button & Info */}
                 <div className="flex flex-col items-center space-y-4">
-                    {!loadingStatus && (
+                    {loadingStatus ? (
+                        <div className="py-6 flex flex-col items-center justify-center gap-3">
+                            <MatrixLoader size="md" variant="orbit" rounded />
+                            <span className="text-xs text-gray-500 uppercase tracking-wider">Checking Spin Status...</span>
+                        </div>
+                    ) : (
                         <button
                             onClick={handleSpin}
                             disabled={!canSpin || isSpinning}

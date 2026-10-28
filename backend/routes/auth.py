@@ -7,7 +7,12 @@ from flask import Blueprint, request, jsonify
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
-from models import db, User, OtpToken, DailySpin, Saving, QuizAttempt, Notification, BankAccount, Transaction, Autopay, SavingsWallet, Goal, GoalAutoSaving, GoalTransaction, GoalDelayHistory
+from models import (
+    db, User, OtpToken, DailySpin, Saving, QuizAttempt, Notification, 
+    BankAccount, Transaction, Autopay, SavingsWallet, Goal, 
+    GoalAutoSaving, GoalTransaction, GoalDelayHistory,
+    TrackerTransaction, BillUpload, TrackerCategory, TrackerSubscription, CategoryBudget
+)
 from utils.email import send_otp_email
 from utils.security import hash_password, verify_password
 from google.oauth2 import id_token
@@ -360,6 +365,12 @@ def delete_account():
         Transaction.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         Autopay.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         SavingsWallet.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+
+        TrackerTransaction.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        BillUpload.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        TrackerCategory.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        TrackerSubscription.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        CategoryBudget.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         
         OtpToken.query.filter_by(email=user_email).delete(synchronize_session=False)
         

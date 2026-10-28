@@ -47,3 +47,10 @@ test.css
 
 
 .env.test.local
+
+# User uploaded files, receipts & bills
+backend/uploads/
+uploads/
+
+# TypeScript incremental build cache
+*.tsbuildinfo

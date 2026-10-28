@@ -1,3 +1,4 @@
+import MatrixLoader from '../../components/ui/MatrixLoader';
 import { useState } from 'react';
 import { ShoppingBag, Smartphone, Tag, Headphones, Speaker, CheckCircle, Coins, Zap } from 'lucide-react';
 import { useDashboard } from '../DashboardLayout';

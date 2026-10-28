@@ -329,7 +329,12 @@ def leaderboard():
     else:
         order_col = User.xp.desc()
 
-    top_users = User.query.filter_by(is_verified=True).order_by(order_col).limit(100).all()
+    top_users = User.query.filter(
+        User.is_verified == True,
+        ~User.email.ilike('%test@example.com'),
+        ~User.email.ilike('%@nickel.local'),
+        ~User.full_name.ilike('%Test User%')
+    ).order_by(order_col).limit(100).all()
 
     def rank_coins(rank):
         if rank == 1: return 5000
@@ -360,7 +365,13 @@ def leaderboard():
     if user_rank is None:
         user_val = user.lifetime_xp if timeframe == 'all_time' else user.xp
         col = User.lifetime_xp if timeframe == 'all_time' else User.xp
-        count = User.query.filter(col > user_val, User.is_verified == True).count()
+        count = User.query.filter(
+            col > user_val, 
+            User.is_verified == True,
+            ~User.email.ilike('%test@example.com'),
+        ~User.email.ilike('%@nickel.local'),
+            ~User.full_name.ilike('%Test User%')
+        ).count()
         user_rank = count + 1
 
     season_state = GlobalState.query.filter_by(key='current_season_number').first()

@@ -81,9 +81,54 @@ def build_nickel_context(user_id: int) -> str:
         date_str = t.created_at.strftime('%Y-%m-%d %H:%M') if t.created_at else "Unknown Date"
         tx_context.append(f"  * {date_str} - {t.type} of ₹{t.amount:,.2f}: {t.description}")
         
-    txs_str = "RECENT TRANSACTIONS (Last 10):\n" + ("\n".join(tx_context) if tx_context else "  No recent transactions.\n")
-    
+    # 4. Expense Tracker Spending Context (Current Month)
+    tracker_context_str = "EXPENSE TRACKER (Current Month):\n"
+    try:
+        from models import TrackerTransaction, TrackerSubscription
+        from datetime import date
+        today = date.today()
+        month_start = today.replace(day=1)
+        month_txs = TrackerTransaction.query.filter(
+            TrackerTransaction.user_id == user.id,
+            TrackerTransaction.transaction_date >= month_start
+        ).all()
+
+        month_expenses = sum(float(t.amount) for t in month_txs if t.type == 'EXPENSE')
+        month_income = sum(float(t.amount) for t in month_txs if t.type == 'INCOME')
+
+        # Top 3 categories
+        cat_map = {}
+        for t in month_txs:
+            if t.type == 'EXPENSE':
+                c = t.category_name or 'Other'
+                cat_map[c] = cat_map.get(c, 0.0) + float(t.amount)
+        top_cats = sorted(cat_map.items(), key=lambda x: x[1], reverse=True)[:3]
+        top_cats_str = ", ".join([f"{c[0]}: ₹{c[1]:,.2f}" for c in top_cats]) if top_cats else "None"
+
+        # Subscriptions
+        subs = TrackerSubscription.query.filter_by(user_id=user.id, status='ACTIVE').all()
+        subs_cost = sum(float(s.amount) for s in subs)
+
+        tracker_context_str += (
+            f"  * Month Expenses: ₹{month_expenses:,.2f}\n"
+            f"  * Month Income: ₹{month_income:,.2f}\n"
+            f"  * Top Categories: {top_cats_str}\n"
+            f"  * Active Subscriptions: {len(subs)} (Total ₹{subs_cost:,.2f}/mo)\n"
+        )
+
+        # Recent 5 tracker transactions
+        recent_tracker = TrackerTransaction.query.filter_by(user_id=user.id).order_by(TrackerTransaction.transaction_date.desc(), TrackerTransaction.id.desc()).limit(5).all()
+        if recent_tracker:
+            tracker_context_str += "  * Recent Spending:\n"
+            for rt in recent_tracker:
+                d_str = rt.transaction_date.strftime('%b %d') if rt.transaction_date else "Recent"
+                m_str = f" at {rt.merchant}" if rt.merchant else ""
+                tracker_context_str += f"    - {d_str}: {rt.type} ₹{float(rt.amount):,.2f} ({rt.category_name}{m_str})\n"
+    except Exception as e:
+        tracker_context_str += "  Expense tracker data currently unavailable.\n"
+
     # Compile the final context string
-    full_context = f"{profile_str}\n{goals_str}\n{txs_str}"
+    full_context = f"{profile_str}\n{goals_str}\n{txs_str}\n{tracker_context_str}"
     
     return full_context
+

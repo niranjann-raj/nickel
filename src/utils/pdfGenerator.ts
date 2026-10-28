@@ -7,10 +7,11 @@ export const generateGoalSummaryPDF = (goalData: any) => {
     const progress = goal.target_amount > 0 ? (goal.saved_amount / goal.target_amount) * 100 : 0;
     const progressCapped = Math.min(progress, 100).toFixed(1);
 
-    // --- PDF Styling & Config ---
-    const primaryColor: [number, number, number] = [99, 102, 241]; // Indigo-500
-    const textColor: [number, number, number] = [31, 41, 55]; // Gray-800
-    const lightText: [number, number, number] = [107, 114, 128]; // Gray-500
+    // --- PDF Styling & Config (Monochrome: Black, White, Grey Theme) ---
+    const primaryColor: [number, number, number] = [17, 17, 19]; // Deep Onyx Black
+    const textColor: [number, number, number] = [24, 24, 27]; // Charcoal Near-Black
+    const lightText: [number, number, number] = [113, 113, 122]; // Zinc-500 Mid Grey
+    const dividerColor: [number, number, number] = [228, 228, 231]; // Zinc-200 Subtle Border
     let yPos = 20;
 
     // Helper: Add Text
@@ -29,16 +30,16 @@ export const generateGoalSummaryPDF = (goalData: any) => {
     addText("NICKEL", 105, yPos, 24, primaryColor, true, "center");
     yPos += 10;
     
-    addText("Financial Goal Summary", 105, yPos, 14, textColor, false, "center");
+    addText("Financial Goal Summary", 105, yPos, 13, lightText, false, "center");
     yPos += 12;
 
     // Horizontal Line
-    doc.setDrawColor(200, 200, 200);
+    doc.setDrawColor(dividerColor[0], dividerColor[1], dividerColor[2]);
     doc.line(14, yPos, 196, yPos);
     yPos += 10;
 
     // --- Section 1: Goal Overview ---
-    addText("SECTION 1 - GOAL OVERVIEW", 14, yPos, 12, primaryColor, true);
+    addText("SECTION 1 - GOAL OVERVIEW", 14, yPos, 11, primaryColor, true);
     yPos += 8;
     addText(`Goal Name:`, 14, yPos, 10, lightText);
     addText(goal.name, 50, yPos, 10, textColor, true);
@@ -54,11 +55,12 @@ export const generateGoalSummaryPDF = (goalData: any) => {
     yPos += 12;
 
     // Horizontal Line
+    doc.setDrawColor(dividerColor[0], dividerColor[1], dividerColor[2]);
     doc.line(14, yPos, 196, yPos);
     yPos += 10;
 
     // --- Section 2: Financial Summary ---
-    addText("SECTION 2 - FINANCIAL SUMMARY", 14, yPos, 12, primaryColor, true);
+    addText("SECTION 2 - FINANCIAL SUMMARY", 14, yPos, 11, primaryColor, true);
     yPos += 8;
     addText(`Target Amount:`, 14, yPos, 10, lightText);
     addText(`Rs. ${goal.target_amount.toLocaleString('en-IN')}`, 50, yPos, 10, textColor, true);
@@ -71,11 +73,12 @@ export const generateGoalSummaryPDF = (goalData: any) => {
     yPos += 12;
 
     // Horizontal Line
+    doc.setDrawColor(dividerColor[0], dividerColor[1], dividerColor[2]);
     doc.line(14, yPos, 196, yPos);
     yPos += 10;
 
     // --- Section 3: Saving Plan ---
-    addText("SECTION 3 - SAVING PLAN", 14, yPos, 12, primaryColor, true);
+    addText("SECTION 3 - SAVING PLAN", 14, yPos, 11, primaryColor, true);
     yPos += 8;
     if (auto_saving) {
         addText(`Frequency:`, 14, yPos, 10, lightText);
@@ -94,15 +97,16 @@ export const generateGoalSummaryPDF = (goalData: any) => {
     yPos += 6;
 
     // Horizontal Line
+    doc.setDrawColor(dividerColor[0], dividerColor[1], dividerColor[2]);
     doc.line(14, yPos, 196, yPos);
     yPos += 10;
 
     // --- Section 4: Progress Visualization ---
-    addText("SECTION 4 - PROGRESS", 14, yPos, 12, primaryColor, true);
+    addText("SECTION 4 - PROGRESS", 14, yPos, 11, primaryColor, true);
     yPos += 8;
     // Draw simple progress bar
-    doc.setDrawColor(200, 200, 200);
-    doc.setFillColor(243, 244, 246); // bg-gray-100
+    doc.setDrawColor(dividerColor[0], dividerColor[1], dividerColor[2]);
+    doc.setFillColor(244, 244, 245); // bg-zinc-100
     doc.roundedRect(14, yPos, 182, 8, 4, 4, 'FD');
     
     if (progress > 0) {
@@ -113,14 +117,15 @@ export const generateGoalSummaryPDF = (goalData: any) => {
     yPos += 16;
 
     // Horizontal Line
+    doc.setDrawColor(dividerColor[0], dividerColor[1], dividerColor[2]);
     doc.line(14, yPos, 196, yPos);
     yPos += 10;
 
     // --- Section 5: Transaction History ---
-    addText("SECTION 5 - RECENT TRANSACTIONS", 14, yPos, 12, primaryColor, true);
+    addText("SECTION 5 - RECENT TRANSACTIONS", 14, yPos, 11, primaryColor, true);
     yPos += 8;
 
-    const tableData = transactions.slice(0, 50).map((t: any) => [
+    const tableData = (transactions || []).slice(0, 50).map((t: any) => [
         new Date(t.created_at).toLocaleDateString(),
         t.type,
         t.description || (t.type === 'CREDIT' ? 'Deposit' : 'Withdrawal'),
@@ -133,10 +138,23 @@ export const generateGoalSummaryPDF = (goalData: any) => {
             startY: yPos,
             head: [['Date', 'Type', 'Description', 'Amount', 'Status']],
             body: tableData,
-            theme: 'striped',
-            headStyles: { fillColor: primaryColor },
+            theme: 'grid',
+            headStyles: {
+                fillColor: [24, 24, 27],
+                textColor: [255, 255, 255],
+                fontSize: 9,
+                fontStyle: 'bold'
+            },
+            bodyStyles: {
+                fontSize: 8.5,
+                textColor: [31, 41, 55],
+                lineColor: [228, 228, 231]
+            },
+            alternateRowStyles: {
+                fillColor: [249, 250, 251]
+            },
             margin: { left: 14, right: 14 },
-            styles: { fontSize: 9 },
+            styles: { fontSize: 8.5 },
         });
         yPos = (doc as any).lastAutoTable.finalY + 10;
     } else {
@@ -152,7 +170,7 @@ export const generateGoalSummaryPDF = (goalData: any) => {
     }
     
     // Horizontal Line
-    doc.setDrawColor(200, 200, 200);
+    doc.setDrawColor(dividerColor[0], dividerColor[1], dividerColor[2]);
     doc.line(14, yPos, 196, yPos);
     yPos += 10;
 

@@ -1,3 +1,4 @@
+import MatrixLoader from '../../components/ui/MatrixLoader';
 import UserSummaryCard from '../components/UserSummaryCard';
 import LeaderboardCard from '../components/LeaderboardCard';
 import SavingGraphCard from '../components/SavingGraphCard';
@@ -25,14 +26,9 @@ export default function DashboardHome() {
 
     if (loading) {
         return (
-            <div className="space-y-6 max-w-[1400px] mx-auto animate-pulse">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-gray-200 dark:bg-gray-800 rounded-[24px]" />)}
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 h-64 bg-gray-200 dark:bg-gray-800 rounded-[24px]" />
-                    <div className="h-96 bg-gray-200 dark:bg-gray-800 rounded-[24px]" />
-                </div>
+            <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
+                <MatrixLoader size="lg" variant="orbit" rounded />
+                <span className="text-xs text-gray-500 tracking-wider uppercase font-medium">Loading Dashboard...</span>
             </div>
         );
     }

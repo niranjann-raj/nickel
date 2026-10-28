@@ -1,3 +1,4 @@
+import MatrixLoader from './MatrixLoader';
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -483,7 +484,7 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
                         </div>
                     )}
                     <button type="submit" disabled={loading} style={{width:"100%",padding:"0.65rem",borderRadius:6,border:"none",background:"#ededed",color:"#000",fontWeight:500,fontSize:"0.875rem",cursor:"pointer",opacity: loading ? 0.7 : 1}}>
-                        {loading ? 'Sending...' : 'Send OTP'}
+                        {loading ? <span className="flex items-center justify-center gap-2"><MatrixLoader size="sm" variant="orbit" rounded baseColor="#777" activeColor="#000" /> Sending...</span> : 'Send OTP'}
                     </button>
                   </form>
                 </>
@@ -502,7 +503,7 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
                         </div>
                     )}
                     <button type="submit" disabled={loading} style={{width:"100%",padding:"0.65rem",borderRadius:6,border:"none",background:"#ededed",color:"#000",fontWeight:500,fontSize:"0.875rem",cursor:"pointer",opacity: loading ? 0.7 : 1}}>
-                        {loading ? 'Verifying...' : 'Verify OTP'}
+                        {loading ? <span className="flex items-center justify-center gap-2"><MatrixLoader size="sm" variant="orbit" rounded baseColor="#777" activeColor="#000" /> Verifying...</span> : 'Verify OTP'}
                     </button>
                     <button type="button" onClick={() => handleForgotSendOtp()} disabled={loading || countdown > 0} style={{color: countdown > 0 ? "#555" : "#888", background:"none", border:"none", fontSize:"0.75rem", cursor: countdown > 0 ? 'default' : 'pointer', marginTop: '0.5rem'}}>
                         {countdown > 0 ? `Resend code in ${Math.floor(countdown/60)}:${String(countdown%60).padStart(2,'0')}` : 'Didn\'t receive it? Resend'}
@@ -532,7 +533,7 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
                         </div>
                     )}
                     <button type="submit" disabled={loading} style={{width:"100%",padding:"0.65rem",borderRadius:6,border:"none",background:"#ededed",color:"#000",fontWeight:500,fontSize:"0.875rem",cursor:"pointer",opacity: loading ? 0.7 : 1}}>
-                        {loading ? 'Resetting...' : 'Reset Password'}
+                        {loading ? <span className="flex items-center justify-center gap-2"><MatrixLoader size="sm" variant="orbit" rounded baseColor="#777" activeColor="#000" /> Resetting...</span> : 'Reset Password'}
                     </button>
                   </form>
                 </>
@@ -585,7 +586,7 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
               )}
 
               <button type="submit" disabled={loading} style={{width:"100%",padding:"0.65rem",borderRadius:6,border:"none",background:"#ededed",color:"#000",fontWeight:500,fontSize:"0.875rem",cursor:"pointer",opacity: loading ? 0.7 : 1}}>
-                  {loading ? 'Logging in...' : 'Continue with Email'}
+                  {loading ? <span className="flex items-center justify-center gap-2"><MatrixLoader size="sm" variant="orbit" rounded baseColor="#777" activeColor="#000" /> Logging in...</span> : 'Continue with Email'}
               </button>
             </form>
 
@@ -659,7 +660,7 @@ export default function ModernLoginSignup({ defaultIsLogin = true }: { defaultIs
               )}
 
               <button type="submit" disabled={loading || !otpVerified} style={{width:"100%",padding:"0.65rem",borderRadius:6,border:"none",background: otpVerified ? "#ededed" : "#333",color: otpVerified ? "#000" : "#888",fontWeight:500,fontSize:"0.875rem",cursor: otpVerified ? "pointer" : "not-allowed",opacity: loading ? 0.7 : 1}}>
-                  {(loading && otpVerified) ? 'Creating account...' : 'Sign Up with Email'}
+                  {(loading && otpVerified) ? <span className="flex items-center justify-center gap-2"><MatrixLoader size="sm" variant="orbit" rounded baseColor="#777" activeColor="#000" /> Creating account...</span> : 'Sign Up with Email'}
               </button>
             </form>
 

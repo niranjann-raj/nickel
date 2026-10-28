@@ -1,3 +1,4 @@
+import MatrixLoader from '../../components/ui/MatrixLoader';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target, Plus, TrendingUp, CheckCircle, PiggyBank, Calendar, AlertTriangle, Play, Pause, Edit3, Trash2, Search, X } from 'lucide-react';
@@ -106,7 +107,12 @@ export default function GoalsPage() {
     };
 
     if (loading) {
-        return <div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#333]"></div></div>;
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
+                <MatrixLoader size="lg" variant="orbit" rounded />
+                <span className="text-xs text-gray-500 tracking-wider uppercase font-medium">Loading Goals...</span>
+            </div>
+        );
     }
 
     const filteredGoals = goals.filter(g => {

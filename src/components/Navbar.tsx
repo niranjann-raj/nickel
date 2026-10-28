@@ -18,8 +18,9 @@ export default function Navbar() {
                     {/* Center Navigation */}
                     <div className="hidden md:flex items-center gap-8">
                         <a href="#features" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Features</a>
-                        <a href="#how-it-works" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Work</a>
-                        <a href="#about" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">About</a>
+                        <a href="#spotlight" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Spotlight</a>
+                        <a href="#about" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Testimonials</a>
+                        <a href="#faq" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">FAQ</a>
                     </div>
 
                     {/* Right Side */}
@@ -45,8 +46,9 @@ export default function Navbar() {
                 <div className={`md:hidden absolute top-full left-0 right-0 mt-2 border border-white/10 bg-black/80 backdrop-blur-xl rounded-2xl transition-all duration-300 overflow-hidden ${isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="px-4 py-6 flex flex-col gap-5">
                         <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 hover:text-white font-medium text-lg">Features</a>
-                        <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 hover:text-white font-medium text-lg">Work</a>
-                        <a href="#about" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 hover:text-white font-medium text-lg">About</a>
+                        <a href="#spotlight" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 hover:text-white font-medium text-lg">Spotlight</a>
+                        <a href="#about" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 hover:text-white font-medium text-lg">Testimonials</a>
+                        <a href="#faq" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 hover:text-white font-medium text-lg">FAQ</a>
                         <div className="h-px bg-white/10 w-full my-2"></div>
                         <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 hover:text-white font-medium text-lg">Log In</Link>
                         <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)} className="bg-white text-black px-5 py-3 rounded-xl font-bold text-lg text-center shadow-lg transition-all">Get Started</Link>

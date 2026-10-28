@@ -1,3 +1,4 @@
+import MatrixLoader from '../../components/ui/MatrixLoader';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Target, Calendar, Clock, History, CreditCard, ShoppingCart, Activity, Zap, CheckCircle2, XCircle, FileText, Download } from 'lucide-react';
@@ -47,7 +48,12 @@ export default function GoalDetailsPage() {
     }, [id]);
 
     if (loading) {
-        return <div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#333]"></div></div>;
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
+                <MatrixLoader size="lg" variant="orbit" rounded />
+                <span className="text-xs text-gray-500 tracking-wider uppercase font-medium">Loading Goal...</span>
+            </div>
+        );
     }
 
     if (!goalData) {
@@ -101,7 +107,7 @@ export default function GoalDetailsPage() {
                         className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
                     >
                         {isExporting ? (
-                            <div className="w-4 h-4 border-2 border-[#333] border-t-transparent rounded-full animate-spin" />
+                            <MatrixLoader size="sm" variant="orbit" rounded />
                         ) : (
                             <Download className="w-4 h-4" />
                         )}

@@ -1,12 +1,11 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import ProblemSection from './components/ProblemSection';
 import SolutionSection from './components/SolutionSection';
 import FeaturesSection from './components/FeaturesSection';
 import HowItWorksSection from './components/HowItWorksSection';
-import TechSection from './components/TechSection';
 import ImpactSection from './components/ImpactSection';
+import FaqSection from './components/FaqSection';
 import CtaSection from './components/CtaSection';
 import Footer from './components/Footer';
 import LoginPage from './pages/LoginPage';
@@ -28,6 +27,9 @@ import ShopPage from './dashboard/pages/ShopPage';
 import GoalsPage from './dashboard/pages/GoalsPage';
 import GoalDetailsPage from './dashboard/pages/GoalDetailsPage';
 import SpinPage from './dashboard/pages/SpinPage';
+import MoneyTrackerPage from './dashboard/pages/MoneyTrackerPage';
+import SplitOverviewPage from './dashboard/pages/SplitOverviewPage';
+import SplitRoomPage from './dashboard/pages/SplitRoomPage';
 
 function LandingPage() {
     useEffect(() => {
@@ -45,12 +47,11 @@ function LandingPage() {
             <Navbar />
             <main className="relative z-10">
                 <Hero />
-                <ProblemSection />
                 <SolutionSection />
                 <FeaturesSection />
                 <HowItWorksSection />
-                <TechSection />
                 <ImpactSection />
+                <FaqSection />
                 <CtaSection />
             </main>
             <div className="relative z-10">
@@ -87,6 +88,9 @@ function App() {
                     <Route path="spin" element={<SpinPage />} />
                     <Route path="goals" element={<GoalsPage />} />
                     <Route path="goals/:id" element={<GoalDetailsPage />} />
+                    <Route path="tracker" element={<MoneyTrackerPage />} />
+                    <Route path="split" element={<SplitOverviewPage />} />
+                    <Route path="split/:roomId" element={<SplitRoomPage />} />
                 </Route>
                 
                 {/* 404 Catch-All Route */}

@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import TopNavbar from './TopNavbar';
 import ChatBot from './ChatBot';
 import { api } from './api';
+import MatrixLoader from '../components/ui/MatrixLoader';
 
 interface UserProfile {
     id: number;
@@ -108,6 +109,15 @@ export default function DashboardLayout() {
         if (newDark) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); }
         else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
     };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#09090b] text-white gap-4">
+                <MatrixLoader size="lg" variant="orbit" rounded />
+                <span className="text-xs text-gray-500 tracking-wider uppercase font-medium">Loading Nickel...</span>
+            </div>
+        );
+    }
 
     return (
         <DashboardContext.Provider value={{ user, refreshUser: fetchUser, loading, notifications, addNotification, clearNotifications }}>

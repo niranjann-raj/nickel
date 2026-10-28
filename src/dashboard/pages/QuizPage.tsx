@@ -1,3 +1,4 @@
+import MatrixLoader from '../../components/ui/MatrixLoader';
 import { useEffect, useState } from 'react';
 import { Brain, CheckCircle, XCircle, Coins, RefreshCw, AlertCircle } from 'lucide-react';
 import { api } from '../api';
@@ -70,8 +71,9 @@ export default function QuizPage() {
     };
 
     if (loading) return (
-        <div className="flex items-center justify-center h-64">
-            <div className="w-10 h-10 border-4 border-[#333] border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col items-center justify-center h-64 gap-3">
+            <MatrixLoader size="lg" variant="orbit" rounded />
+            <span className="text-xs text-gray-500 tracking-wider uppercase font-medium">Loading Quiz...</span>
         </div>
     );
 
