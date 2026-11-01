@@ -15,21 +15,18 @@ export default function ExpenseDetailsModal({
 }: ExpenseDetailsModalProps) {
     if (!isOpen || !expense) return null;
 
-    const splitMethodExplanation = (method: string) => {
-        switch (method) {
-            case 'EQUAL':
-                return 'The total bill was split equally among all selected participants, with any single-paisa rounding distributed deterministically.';
-            case 'EXACT':
-            case 'UNEQUAL':
-                return 'Custom exact amounts were manually assigned to each participant.';
-            case 'PERCENTAGE':
-                return 'The expense was divided according to specific percentage shares assigned to each member.';
-            case 'SHARES':
-            case 'RATIO':
-                return 'The expense was split proportionally according to custom ratio share units assigned to each member.';
-            default:
-                return 'Calculated using group split rules.';
+    const splitMethodLabel = (method: string) => {
+        if (method?.toUpperCase() === 'EXACT' || method?.toUpperCase() === 'UNEQUAL') {
+            return 'Custom Amount';
         }
+        return 'Equally';
+    };
+
+    const splitMethodExplanation = (method: string) => {
+        if (method?.toUpperCase() === 'EXACT' || method?.toUpperCase() === 'UNEQUAL') {
+            return 'Custom exact amounts were manually assigned to each participant.';
+        }
+        return 'The total bill was split equally among all selected participants, with any single-paisa rounding distributed deterministically.';
     };
 
     return (
@@ -130,42 +127,67 @@ export default function ExpenseDetailsModal({
                                 Who Owes How Much ({expense.shares?.length || 0} participants)
                             </span>
                             <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-white/10 text-white border border-white/15">
-                                {expense.split_method}
+                                {splitMethodLabel(expense.split_method)}
                             </span>
                         </div>
 
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {splitMethodExplanation(expense.split_method)}
+                            {expense.split_method === 'EQUAL' && (expense.payers?.length || 0) > 1
+                                ? 'Split equally among participants. Net amounts show remaining payments after deducting what each person already contributed upfront.'
+                                : splitMethodExplanation(expense.split_method)}
                         </p>
 
                         <div className="space-y-1.5 pt-1">
-                            {expense.shares?.map((s: any, idx: number) => (
-                                <div
-                                    key={idx}
-                                    className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#18181c] border border-gray-200 dark:border-white/5"
-                                >
-                                    <div className="flex items-center gap-2.5">
-                                        <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-xs overflow-hidden">
-                                            {s.user_avatar ? (
-                                                <img src={s.user_avatar} alt="" className="w-full h-full object-cover" />
-                                            ) : (
-                                                s.user_name?.charAt(0) || 'U'
-                                            )}
+                            {expense.shares?.map((s: any, idx: number) => {
+                                const isMultiPayerEqual = expense.split_method === 'EQUAL' && (expense.payers?.length || 0) > 1;
+                                let displayAmount = Number(s.share_amount);
+                                let subtitle = '';
+                                if (isMultiPayerEqual) {
+                                    const payerItem = expense.payers?.find((p: any) => p.user_id === s.user_id);
+                                    const paidAmount = Number(payerItem?.amount_paid || 0);
+                                    const grossShare = Number(s.share_amount);
+                                    const netOwed = Math.round((grossShare - paidAmount) * 100) / 100;
+                                    if (netOwed > 0) {
+                                        displayAmount = netOwed;
+                                        subtitle = `Has to pay ${currency} ${netOwed.toFixed(2)}`;
+                                    } else {
+                                        displayAmount = 0;
+                                        const extra = Math.round((paidAmount - grossShare) * 100) / 100;
+                                        subtitle = extra > 0 ? `Paid ${currency} ${extra.toFixed(2)} extra` : 'Settled';
+                                    }
+                                }
+
+                                return (
+                                    <div
+                                        key={idx}
+                                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#18181c] border border-gray-200 dark:border-white/5"
+                                    >
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-xs overflow-hidden">
+                                                {s.user_avatar ? (
+                                                    <img src={s.user_avatar} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    s.user_name?.charAt(0) || 'U'
+                                                )}
+                                            </div>
+                                            <div>
+                                                <span className="text-xs font-semibold text-gray-900 dark:text-white block">
+                                                    {s.user_name}
+                                                </span>
+                                                {subtitle && (
+                                                    <span className="text-[10px] text-gray-400 block">
+                                                        {subtitle}
+                                                    </span>
+                                                )}
+                                            </div>
+
                                         </div>
-                                        <span className="text-xs font-semibold text-gray-900 dark:text-white">
-                                            {s.user_name}
+                                        <span className={`text-xs font-mono font-bold ${displayAmount > 0 ? 'text-rose-500' : 'text-emerald-400'}`}>
+                                            {currency} {displayAmount.toFixed(2)}
                                         </span>
-                                        {s.raw_value !== null && s.raw_value !== undefined && (
-                                            <span className="text-[11px] text-gray-400">
-                                                ({expense.split_method === 'PERCENTAGE' ? `${s.raw_value}%` : `${s.raw_value} pts`})
-                                            </span>
-                                        )}
                                     </div>
-                                    <span className="text-xs font-mono font-bold text-rose-500">
-                                        {currency} {Number(s.share_amount).toFixed(2)}
-                                    </span>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
 

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Target, Flame } from 'lucide-react';
+import { X, Target, Flame, Calendar as CalendarIcon, Award } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { getGoalCompletionCoins } from '@/utils/goalRewards';
 
 const PREDEFINED_GOALS = [
     { id: 'mobile', name: 'Buy a Mobile', icon: '📱', desc: 'Upgrade to the latest smartphone.', defaultTarget: 50000 },
@@ -27,6 +29,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSave, netCashFlow =
     const [freq, setFreq] = useState('MONTHLY');
     const [customDays, setCustomDays] = useState('15');
     const [autoAmount, setAutoAmount] = useState('');
+    const [showCalendar, setShowCalendar] = useState(false);
 
     useEffect(() => {
         if (!isOpen) {
@@ -34,6 +37,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSave, netCashFlow =
             setName('');
             setTargetAmount('');
             setTargetDate('');
+            setShowCalendar(false);
             setFreq('MONTHLY');
             setAutoAmount('');
         }
@@ -156,18 +160,56 @@ export default function CreateGoalModal({ isOpen, onClose, onSave, netCashFlow =
                             <div>
                                 <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Target Amount (₹)</label>
                                 <input type="number" value={targetAmount} onChange={e => setTargetAmount(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-[#555] outline-none transition-all text-gray-900 dark:text-white" placeholder="80000" />
+                                {targetAmount && Number(targetAmount) > 0 && (
+                                    <div className="mt-2.5 flex items-center justify-between px-3.5 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs">
+                                        <span className="text-amber-300 font-medium flex items-center gap-1.5">
+                                            <span>🪙</span> Completion Bonus
+                                        </span>
+                                        <span className="font-bold text-amber-400">
+                                            +{getGoalCompletionCoins(targetAmount).toLocaleString()} Gold Coins
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             <div>
                                 <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Target Date</label>
-                                <input 
-                                    type="date" 
-                                    value={targetDate} 
-                                    min={new Date().toISOString().split('T')[0]}
-                                    onChange={e => setTargetDate(e.target.value)} 
-                                    onClick={(e) => { try { (e.target as HTMLInputElement).showPicker(); } catch (err) {} }}
-                                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-[#555] outline-none transition-all text-gray-900 dark:text-white dark:[color-scheme:dark]" 
-                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCalendar(prev => !prev)}
+                                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-[#555] outline-none transition-all text-left text-gray-900 dark:text-white cursor-pointer group hover:ring-gray-300 dark:hover:ring-gray-600"
+                                >
+                                    <span className={targetDate ? 'font-medium' : 'text-gray-400'}>
+                                        {targetDate
+                                            ? new Date(targetDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                            : 'Select target date...'}
+                                    </span>
+                                    <CalendarIcon className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                                </button>
+
+                                {showCalendar && (
+                                    <div className="mt-3 p-3 bg-[#111] border border-white/10 rounded-2xl flex flex-col items-center shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+                                        <Calendar
+                                            mode="single"
+                                            selected={targetDate ? new Date(targetDate + 'T00:00:00') : undefined}
+                                            onSelect={(d) => {
+                                                if (d) {
+                                                    const y = d.getFullYear();
+                                                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                                                    const day = String(d.getDate()).padStart(2, '0');
+                                                    setTargetDate(`${y}-${m}-${day}`);
+                                                    setShowCalendar(false);
+                                                }
+                                            }}
+                                            disabled={(d) => {
+                                                const today = new Date();
+                                                today.setHours(0, 0, 0, 0);
+                                                return d < today;
+                                            }}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                )}
                             </div>
                             
                             <div>
@@ -211,7 +253,7 @@ export default function CreateGoalModal({ isOpen, onClose, onSave, netCashFlow =
                                 {freq === 'DAILY' ? (
                                     <p className="mt-2 text-xs text-orange-400/90 bg-orange-500/10 p-2.5 rounded-xl border border-orange-500/20 flex items-center gap-1.5">
                                         <Flame className="w-3.5 h-3.5 shrink-0" />
-                                        <span><strong>Daily Streak Eligible:</strong> Each day AutoPay debits from Net Cash Flow, you maintain your streak and earn +50 XP!</span>
+                                        <span><strong>Daily Streak Eligible:</strong> Each day AutoPay debits from your Main Account Balance, you maintain your streak and earn +50 XP!</span>
                                     </p>
                                 ) : (
                                     <p className="mt-2 text-[11px] text-gray-400">
@@ -240,10 +282,10 @@ export default function CreateGoalModal({ isOpen, onClose, onSave, netCashFlow =
                             <div className="bg-gray-50 dark:bg-gray-800/60 p-4 rounded-2xl border border-gray-200 dark:border-gray-700/60 flex items-center justify-between">
                                 <div>
                                     <span className="text-[11px] uppercase font-semibold text-gray-400 tracking-wider">Funding Source</span>
-                                    <p className="text-sm font-bold text-gray-900 dark:text-white">Expense Tracker Net Cash Flow</p>
+                                    <p className="text-sm font-bold text-gray-900 dark:text-white">Main Account Balance</p>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-[11px] text-gray-400 block">Available Surplus</span>
+                                    <span className="text-[11px] text-gray-400 block">Available Balance</span>
                                     <p className={`text-sm font-bold ${netCashFlow > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
                                         ₹{Number(netCashFlow).toLocaleString()}
                                     </p>
@@ -254,9 +296,9 @@ export default function CreateGoalModal({ isOpen, onClose, onSave, netCashFlow =
                                 <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start gap-2">
                                     <span className="text-base leading-none">⚠️</span>
                                     <div>
-                                        <p className="font-semibold">AutoPay exceeds current Net Cash Flow</p>
+                                        <p className="font-semibold">AutoPay exceeds current Account Balance</p>
                                         <p className="text-amber-400/80 mt-0.5">
-                                            Your AutoPay amount is ₹{parseFloat(autoAmount || '0').toLocaleString()}, but available surplus is ₹{Number(netCashFlow).toLocaleString()}. AutoPay debits directly from your Net Cash Flow and will automatically pause if balance is insufficient.
+                                            Your AutoPay amount is ₹{parseFloat(autoAmount || '0').toLocaleString()}, but available balance is ₹{Number(netCashFlow).toLocaleString()}. AutoPay debits directly from your Main Account Balance and will automatically pause if balance is insufficient.
                                         </p>
                                     </div>
                                 </div>

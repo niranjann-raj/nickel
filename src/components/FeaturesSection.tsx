@@ -17,6 +17,9 @@ export default function FeaturesSection() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-14 observe-animate">
+                    <div className="inline-flex items-center px-3 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-semibold tracking-wider text-zinc-300 uppercase mb-6">
+                        <span>Features</span>
+                    </div>
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         <div className="lg:col-span-7">
                             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white leading-[1.15]">
@@ -50,7 +53,11 @@ export default function FeaturesSection() {
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-zinc-500'}`} />
+                                        {tab.id === 'ai' ? (
+                                            <img src="/ai.png" alt="AI" className="w-4 h-4 rounded-sm object-cover" />
+                                        ) : (
+                                            <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-zinc-500'}`} />
+                                        )}
                                         <span>{tab.label}</span>
                                     </div>
                                     <ArrowRight className={`w-3.5 h-3.5 transition-transform ${isActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`} />
@@ -322,9 +329,7 @@ export default function FeaturesSection() {
 
                                     {/* AI Response */}
                                     <div className="flex items-start gap-3">
-                                        <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center flex-shrink-0 text-black font-bold text-xs">
-                                            N
-                                        </div>
+                                        <img src="/ai.png" alt="Nickel AI" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                                         <div className="p-3.5 rounded-2xl rounded-tl-sm bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs max-w-lg space-y-2">
                                             <p>
                                                 Yes! Based on your remaining monthly budget of <strong className="text-white">₹15,500</strong> and your scheduled <strong className="text-white">₹12,500</strong> AutoPay already secured:

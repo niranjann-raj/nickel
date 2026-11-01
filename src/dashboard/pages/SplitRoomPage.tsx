@@ -11,7 +11,7 @@ import { api } from '../api';
 import { useDashboard } from '../DashboardLayout';
 import { generateSplitRoomPDF } from '../../utils/splitPdfGenerator';
 
-import AddExpenseModal from '../components/split/AddExpenseModal';
+import AddExpenseModal, { CATEGORIES } from '../components/split/AddExpenseModal';
 import ExpenseDetailsModal from '../components/split/ExpenseDetailsModal';
 import RecordPaymentModal from '../components/split/RecordPaymentModal';
 import EditRoomModal from '../components/split/EditRoomModal';
@@ -29,6 +29,14 @@ const ROOM_EMOJIS: Record<string, string> = {
     Briefcase: '💼',
     Users: '👥',
 };
+
+function formatSplitMethodText(method: string, memberCount: number): string {
+    const plural = memberCount === 1 ? 'member' : 'members';
+    if (method?.toUpperCase() === 'EXACT' || method?.toUpperCase() === 'UNEQUAL') {
+        return `Custom split among ${memberCount} ${plural}`;
+    }
+    return `Split equally among ${memberCount} ${plural}`;
+}
 
 type TabType = 'overview' | 'expenses' | 'settlement' | 'members' | 'analytics';
 
@@ -273,7 +281,11 @@ export default function SplitRoomPage() {
     const emoji = ROOM_EMOJIS[room.icon || 'Plane'] || '👥';
 
     // Unique categories from expenses
-    const categoriesList = ['All', ...new Set(expenses.map(e => e.category))];
+    // Complete category list matching Add Expense categories plus any existing custom ones
+    const allCategoryNames = Array.from(new Set([
+        ...CATEGORIES.map(c => c.name),
+        ...expenses.map(e => e.category).filter(Boolean)
+    ]));
 
     return (
         <div className="space-y-6 p-4 sm:p-8 max-w-7xl mx-auto">
@@ -502,28 +514,46 @@ export default function SplitRoomPage() {
                             </button>
                         </div>
                     ) : financials.settlement_plan.length > 0 ? (
-                        <div className="p-5 rounded-3xl bg-[#18181c] border border-white/10 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center text-white flex-shrink-0">
-                                    <Scale className="w-5 h-5" />
+                        (() => {
+                            const myDebts = financials.settlement_plan.filter((item: any) => item.from_user_id === user?.id);
+                            const myCredits = financials.settlement_plan.filter((item: any) => item.to_user_id === user?.id);
+                            const userHasDebt = myDebts.length > 0;
+
+                            return (
+                                <div className="p-5 rounded-3xl bg-[#18181c] border border-white/10 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center text-white flex-shrink-0">
+                                            <Scale className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-sm text-white">
+                                                {userHasDebt 
+                                                    ? `Action Required: You have ${myDebts.length} pending settlement payment${myDebts.length > 1 ? 's' : ''}`
+                                                    : myCredits.length > 0
+                                                    ? `Awaiting Payment: Other members owe you ${currency} ${myCredits.reduce((acc: number, c: any) => acc + Number(c.amount || 0), 0).toFixed(2)}`
+                                                    : `Simplified Settlement: ${financials.settlement_plan.length} Payment${financials.settlement_plan.length > 1 ? 's' : ''} Needed`}
+                                            </h4>
+                                            <p className="text-xs text-gray-400">
+                                                {userHasDebt 
+                                                    ? 'Please settle your outstanding balance with group members.'
+                                                    : myCredits.length > 0
+                                                    ? 'You have no money to pay. Members will transfer funds to you.'
+                                                    : 'Nickel optimized your group balances to minimize total transactions.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('settlement')}
+                                        className={`px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer whitespace-nowrap self-start sm:self-auto ${
+                                            userHasDebt ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950' : 'bg-white hover:bg-zinc-200 text-zinc-950'
+                                        }`}
+                                    >
+                                        {userHasDebt ? 'Pay Now' : 'View Settlement Plan'}
+                                    </button>
                                 </div>
-                                <div>
-                                    <h4 className="font-bold text-sm text-white">
-                                        Simplified Settlement: {financials.settlement_plan.length} Payment{financials.settlement_plan.length > 1 ? 's' : ''} Needed
-                                    </h4>
-                                    <p className="text-xs text-gray-400">
-                                        Nickel optimized your group balances to minimize total transactions.
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab('settlement')}
-                                className="px-4 py-2 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-xs shadow-sm transition-all cursor-pointer whitespace-nowrap self-start sm:self-auto"
-                            >
-                                Settle Now
-                            </button>
-                        </div>
+                            );
+                        })()
                     ) : null}
 
                     {/* Member Balances Summary Table */}
@@ -654,9 +684,15 @@ export default function SplitRoomPage() {
                                 onChange={(e) => setExpenseCategory(e.target.value)}
                                 className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-[#18181c] border border-gray-200 dark:border-white/10 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 cursor-pointer"
                             >
-                                {categoriesList.map(c => (
-                                    <option key={c} value={c}>{c}</option>
-                                ))}
+                                <option value="All">All Categories</option>
+                                {allCategoryNames.map(name => {
+                                    const cat = CATEGORIES.find(c => c.name === name);
+                                    return (
+                                        <option key={name} value={name}>
+                                            {cat ? `${cat.emoji} ${name}` : name}
+                                        </option>
+                                    );
+                                })}
                             </select>
 
                             {/* Payer Filter */}
@@ -729,7 +765,7 @@ export default function SplitRoomPage() {
                                     >
                                         <div className="flex items-start gap-3.5 flex-1">
                                             <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center text-lg flex-shrink-0">
-                                                🧾
+                                                {CATEGORIES.find(c => c.name === exp.category)?.emoji || '🧾'}
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
@@ -746,7 +782,7 @@ export default function SplitRoomPage() {
                                                     <strong className="text-gray-800 dark:text-gray-200">
                                                         {exp.payers?.map((p: any) => p.user_name).join(', ') || 'N/A'}
                                                     </strong>{' '}
-                                                    • Split {exp.split_method.toLowerCase()} among {exp.shares?.length || 0} members
+                                                    • {formatSplitMethodText(exp.split_method, exp.shares?.length || 0)}
                                                 </p>
 
                                                 <span className="text-[11px] text-gray-400 block">
@@ -842,6 +878,8 @@ export default function SplitRoomPage() {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                                 {financials.settlement_plan.map((item: any, idx: number) => {
+                                    const isPayer = user?.id === item.from_user_id;
+                                    const isRecipient = user?.id === item.to_user_id;
                                     return (
                                         <div
                                             key={idx}
@@ -874,7 +912,9 @@ export default function SplitRoomPage() {
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <span className="text-[10px] uppercase text-gray-400 block font-semibold">Payer</span>
+                                                        <span className="text-[10px] uppercase text-gray-400 block font-semibold">
+                                                            Payer {isPayer && '(You)'}
+                                                        </span>
                                                         <span className="text-xs font-bold text-gray-900 dark:text-white truncate block">
                                                             {item.from_user_name}
                                                         </span>
@@ -885,7 +925,9 @@ export default function SplitRoomPage() {
 
                                                 <div className="flex items-center gap-2 truncate text-right">
                                                     <div>
-                                                        <span className="text-[10px] uppercase text-gray-400 block font-semibold">Recipient</span>
+                                                        <span className="text-[10px] uppercase text-gray-400 block font-semibold">
+                                                            Recipient {isRecipient && '(You)'}
+                                                        </span>
                                                         <span className="text-xs font-bold text-gray-900 dark:text-white truncate block">
                                                             {item.to_user_name}
                                                         </span>
@@ -900,19 +942,30 @@ export default function SplitRoomPage() {
                                                 </div>
                                             </div>
 
-                                            {/* Action Button: Mark as Paid */}
+                                            {/* Action Button: Show payment button ONLY to the user who owes/pays the money */}
                                             <div className="pt-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSelectedTransfer(item);
-                                                        setIsRecordPaymentOpen(true);
-                                                    }}
-                                                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs shadow-md shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
-                                                >
-                                                    <DollarSign className="w-3.5 h-3.5" />
-                                                    <span>Record Payment</span>
-                                                </button>
+                                                {isPayer ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedTransfer(item);
+                                                            setIsRecordPaymentOpen(true);
+                                                        }}
+                                                        className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs shadow-md shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                                                    >
+                                                        <DollarSign className="w-3.5 h-3.5" />
+                                                        <span>Record Payment</span>
+                                                    </button>
+                                                ) : isRecipient ? (
+                                                    <div className="w-full py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 text-center text-xs font-semibold text-emerald-400 flex items-center justify-center gap-1.5">
+                                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                                        <span>You are the recipient • Awaiting payment from {item.from_user_name}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-full py-2.5 px-4 rounded-xl bg-white/5 border border-white/5 text-center text-xs text-gray-400">
+                                                        <span>Pending transfer from {item.from_user_name} to {item.to_user_name}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     );

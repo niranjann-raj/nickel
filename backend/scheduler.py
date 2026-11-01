@@ -1,24 +1,50 @@
 from apscheduler.schedulers.background import BackgroundScheduler
-from models import db, User, Goal, GoalAutoSaving, GoalTransaction
+from models import db, User, Goal, GoalAutoSaving, GoalTransaction, Notification
 from routes.dashboard import level_up
 from datetime import date
 
+def get_user_account_balance(user_id):
+    """
+    Calculates cumulative Main Account Balance (Total Income - Total Expenses)
+    from the Expense Tracker for the authenticated user across all tracked time.
+    """
+    from models import TrackerTransaction
+    from sqlalchemy import func
+    from decimal import Decimal
+
+    inc = db.session.query(func.coalesce(func.sum(TrackerTransaction.amount), Decimal('0.00')))\
+        .filter(
+            TrackerTransaction.user_id == user_id,
+            TrackerTransaction.type == 'INCOME'
+        )\
+        .scalar()
+
+    exp = db.session.query(func.coalesce(func.sum(TrackerTransaction.amount), Decimal('0.00')))\
+        .filter(
+            TrackerTransaction.user_id == user_id,
+            TrackerTransaction.type == 'EXPENSE'
+        )\
+        .scalar()
+
+    net = Decimal(str(inc)) - Decimal(str(exp))
+    return float(net)
+
 def get_user_net_cash_flow(user_id, as_of_date=None, start_date=None, end_date=None):
     """
-    Calculates net cash flow (total income - total expenses) from the Expense Tracker for the user.
-    Defaults to the current month (matching Expense Tracker's active overview period)
-    to guarantee consistent numbers between Expense Tracker and Goal-Based Savings.
+    If start_date and end_date are provided, computes net cash flow for that specific window.
+    Otherwise, returns the user's Main Account Balance (cumulative net cash flow across all tracked time).
     """
     from models import TrackerTransaction
     from sqlalchemy import func
     from decimal import Decimal
     from datetime import date
 
+    if start_date is None and end_date is None:
+        return get_user_account_balance(user_id)
+
     today = as_of_date or date.today()
-    if start_date is None:
-        start_date = today.replace(day=1)
-    if end_date is None:
-        end_date = today
+    start_date = start_date or today.replace(day=1)
+    end_date = end_date or today
 
     inc = db.session.query(func.coalesce(func.sum(TrackerTransaction.amount), Decimal('0.00')))\
         .filter(
@@ -61,18 +87,18 @@ def process_goal_autopay(auto_saving, today):
     if amount <= 0:
         return False, "AutoPay amount must be greater than 0", None, 0.0
 
-    # Check available funds in Expense Tracker Net Cash Flow
-    net_cash_flow = get_user_net_cash_flow(user.id, as_of_date=today)
+    # Linked directly to Main Account Balance (Cumulative all-time balance)
+    account_balance = get_user_account_balance(user.id)
 
-    if net_cash_flow >= amount:
-        # Success: Debit from Expense Tracker
+    if account_balance >= amount:
+        # Success: Debit directly from Main Account Balance (logs an Expense in Tracker)
         tracker_tx = TrackerTransaction(
             user_id=user.id,
             type='EXPENSE',
             amount=Decimal(str(amount)),
             currency='INR',
             category_name='Savings',
-            merchant=f"{goal.name} + autopay debit",
+            merchant=f"{goal.name} autopay debit",
             description=f"AutoPay debit for goal: {goal.name}",
             transaction_date=today,
             payment_method='AutoPay',
@@ -84,19 +110,34 @@ def process_goal_autopay(auto_saving, today):
         # Credit to Goal
         goal.saved_amount += amount
 
-        # Check completion
-        if goal.saved_amount >= goal.target_amount:
+        # Check completion and award Gold Coins based on target amount tier
+        completion_coins = 0
+        if goal.saved_amount >= goal.target_amount and goal.status != 'COMPLETED':
             goal.status = 'COMPLETED'
             goal.current_completion_date = today
+            if not getattr(goal, 'reward_awarded', False):
+                from models import calculate_goal_completion_coins
+                completion_coins = calculate_goal_completion_coins(goal.target_amount)
+                user.coins += completion_coins
+                goal.reward_awarded = True
+
+                notif = Notification(
+                    user_id=user.id,
+                    title="Goal Completed! 🏆",
+                    message=f"Congratulations! You completed your goal '{goal.name}' (Target: ₹{goal.target_amount:,.2f}) and earned {completion_coins:,} Gold Coins!",
+                    type="reward"
+                )
+                db.session.add(notif)
+                print(f"[Goal Autopay] Goal {goal.id} completed! Awarded {completion_coins} Gold Coins to User {user.id}")
 
         tx = GoalTransaction(
             goal_id=goal.id,
             type='GOAL_AUTOPAY',
             amount=amount,
             status='SUCCESS',
-            source='Net Cash Flow',
+            source='Main Account Balance',
             destination='Goal Wallet',
-            description=f"AutoPay: Saved ₹{amount:,.2f} for {goal.name} from Net Cash Flow",
+            description=f"AutoPay: Saved ₹{amount:,.2f} for {goal.name} from Main Account Balance",
             remaining_balance=max(0.0, goal.target_amount - goal.saved_amount),
             current_balance=goal.saved_amount
         )
@@ -108,11 +149,12 @@ def process_goal_autopay(auto_saving, today):
         daily_streak_xp = 0
 
         if auto_saving.frequency == 'DAILY':
+            # Reconcile any past missed days using shields
+            user.get_active_streak()
+
             if user.last_save_date == today:
-                # Already saved towards a daily goal today
                 streak_maintained = True
             elif user.last_save_date == today - timedelta(days=1):
-                # Consecutive day: streak incremented and maintained
                 user.current_streak = (user.current_streak or 0) + 1
                 user.last_save_date = today
                 streak_maintained = True
@@ -124,13 +166,7 @@ def process_goal_autopay(auto_saving, today):
                 except Exception as e:
                     print(f"level_up error: {e}")
             else:
-                # First day of streak or recovering from lapse
-                if user.last_save_date and (today - user.last_save_date).days > 1 and (user.streak_shields or 0) > 0:
-                    user.streak_shields -= 1
-                    user.current_streak = (user.current_streak or 0) + 1
-                else:
-                    user.current_streak = 1
-
+                user.current_streak = 1
                 user.last_save_date = today
                 streak_maintained = True
                 daily_streak_xp = 50
@@ -149,52 +185,68 @@ def process_goal_autopay(auto_saving, today):
         elif auto_saving.frequency == 'MONTHLY':
             auto_saving.next_run_date = today + timedelta(days=30)
         elif auto_saving.frequency == 'CUSTOM' and auto_saving.custom_days:
-            auto_saving.next_run_date = today + timedelta(days=auto_saving.custom_days)
+            try:
+                auto_saving.next_run_date = today + timedelta(days=int(auto_saving.custom_days))
+            except (ValueError, TypeError):
+                auto_saving.next_run_date = today + timedelta(days=1)
+        else:
+            auto_saving.next_run_date = today + timedelta(days=1)
+
+        # In-app notification for the user
+        streak_note = " 🔥 Daily Streak maintained! (+50 XP)" if (auto_saving.frequency == 'DAILY' and daily_streak_xp > 0) else ""
+        notif = Notification(
+            user_id=user.id,
+            title='AutoPay Debited',
+            message=f"Debited ₹{amount:,.2f} from Main Account Balance for '{goal.name}'.{streak_note}",
+            type='success'
+        )
+        db.session.add(notif)
 
         db.session.commit()
-        remaining_cash_flow = net_cash_flow - amount
-        print(f"[Goal Autopay] Success for Goal {goal.id} - Debited INR {amount} from Net Cash Flow. Streak: {user.current_streak}")
+        remaining_balance = account_balance - amount
+        print(f"[Goal Autopay] Success for Goal {goal.id} - Debited INR {amount} from Main Account Balance. Streak: {user.current_streak}")
 
+        completion_note = f" 🏆 Goal Completed! You earned {completion_coins:,} Gold Coins!" if completion_coins > 0 else ""
         if auto_saving.frequency == 'DAILY':
             if daily_streak_xp > 0:
-                success_msg = f"AutoPay executed successfully! Debited ₹{amount:,.2f} from Net Cash Flow. 🔥 Daily Streak: {user.current_streak} days (+{daily_streak_xp} XP earned!)"
+                success_msg = f"AutoPay executed successfully! Debited ₹{amount:,.2f} from Main Account Balance. 🔥 Daily Streak: {user.current_streak} days (+{daily_streak_xp} XP earned!){completion_note}"
             else:
-                success_msg = f"AutoPay executed successfully! Debited ₹{amount:,.2f} from Net Cash Flow. 🔥 Daily Streak maintained for today ({user.current_streak} days)."
+                success_msg = f"AutoPay executed successfully! Debited ₹{amount:,.2f} from Main Account Balance. 🔥 Daily Streak maintained for today ({user.current_streak} days).{completion_note}"
         else:
-            success_msg = f"AutoPay executed successfully! Debited ₹{amount:,.2f} from Net Cash Flow."
+            success_msg = f"AutoPay executed successfully! Debited ₹{amount:,.2f} from Main Account Balance.{completion_note}"
 
-        return True, success_msg, tx, remaining_cash_flow
+        return True, success_msg, tx, remaining_balance
     else:
-        # Failed: Insufficient funds in Net Cash Flow
+        # Failed: Insufficient funds in Main Account Balance
         goal.status = 'PAUSED'
 
-        # Check if daily streak has lapsed from missed previous days
-        if auto_saving.frequency == 'DAILY' and user.last_save_date and (today - user.last_save_date).days > 1:
-            if (user.streak_shields or 0) > 0:
-                user.streak_shields -= 1
-                user.last_save_date = today - timedelta(days=1)
-                print(f"[Goal Autopay] User {user.id} daily goal failed and previous days missed, streak shield used! Shields left: {user.streak_shields}")
-            else:
-                user.current_streak = 0
-                print(f"[Goal Autopay] User {user.id} daily goal failed and previous days missed, streak reset to 0.")
+        if auto_saving.frequency == 'DAILY':
+            user.get_active_streak()
 
-        reason = f"Insufficient balance in Net Cash Flow (₹{net_cash_flow:,.2f} available, ₹{amount:,.2f} required)"
+        reason = f"Insufficient funds in Main Account Balance (₹{account_balance:,.2f} available, ₹{amount:,.2f} required)"
+        notif = Notification(
+            user_id=user.id,
+            title='AutoPay Paused',
+            message=f"AutoPay for '{goal.name}' was paused due to insufficient Main Account Balance (₹{account_balance:,.2f} available, ₹{amount:,.2f} required).",
+            type='warning'
+        )
+        db.session.add(notif)
         tx = GoalTransaction(
             goal_id=goal.id,
             type='GOAL_AUTOPAY',
             amount=amount,
             status='FAILED',
-            source='Net Cash Flow',
+            source='Main Account Balance',
             destination='Goal Wallet',
             reason=reason,
-            description=f"AutoPay Failed: Insufficient balance in Net Cash Flow for {goal.name}",
+            description=f"AutoPay Failed: Insufficient balance in Main Account Balance for {goal.name}",
             remaining_balance=max(0.0, goal.target_amount - goal.saved_amount),
             current_balance=goal.saved_amount
         )
         db.session.add(tx)
         db.session.commit()
-        print(f"[Goal Autopay] Failed for Goal {goal.id} - Insufficient Balance in Net Cash Flow")
-        return False, reason, tx, net_cash_flow
+        print(f"[Goal Autopay] Failed for Goal {goal.id} - Insufficient Balance in Main Account Balance")
+        return False, reason, tx, account_balance
 
 def execute_goal_autopay_job(app):
     with app.app_context():
@@ -218,7 +270,7 @@ def start_scheduler(app):
         func=execute_goal_autopay_job,
         args=[app],
         trigger='cron',
-        hour=0,
+        hour=1,
         minute=0,
         id='goal_autopay_job'
     )

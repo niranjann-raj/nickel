@@ -8,7 +8,7 @@ export default function UserSummaryCard() {
     );
 
     return (
-        <div className="glass-panel card-glow rounded-[24px] p-8 border border-gray-100 dark:border-white/5 relative overflow-hidden">
+        <div className="glass-panel card-glow rounded-[24px] p-8 border border-gray-100 dark:border-white/5 relative overflow-hidden h-full flex flex-col justify-between">
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#111] rounded-full blur-[60px]" />
             <div className="flex items-start justify-between mb-8 relative z-10">
                 <div>

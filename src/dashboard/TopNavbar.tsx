@@ -43,10 +43,9 @@ export default function TopNavbar({ onMenuClick, isDarkMode, onToggleTheme, user
                     <Menu className="w-6 h-6" />
                 </button>
                 <div>
-                    <h1 className="font-heading font-bold text-lg text-gray-900 dark:text-white leading-tight">
+                    <h1 className="font-heading font-bold text-2xl md:text-3xl text-gray-900 dark:text-white leading-tight">
                         Welcome back, <span className="bg-gradient-to-r from-gray-400 via-white to-gray-500 text-transparent bg-clip-text drop-shadow-[0_0_12px_rgba(255,255,255,0.4)] font-black">{userName?.split(' ')[0] || 'Saver'}</span>
                     </h1>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">Let's grow your savings today</p>
                 </div>
             </div>
 

@@ -6,7 +6,8 @@ import { api } from '../api';
 import { useDashboard } from '../DashboardLayout';
 import { generateGoalSummaryPDF } from '../../utils/pdfGenerator';
 import FutureImpactSimulator from '../components/goals/FutureImpactSimulator';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { getGoalCompletionCoins } from '../../utils/goalRewards';
 
 export default function GoalDetailsPage() {
     const { id } = useParams();
@@ -19,6 +20,7 @@ export default function GoalDetailsPage() {
     const [netCashFlow, setNetCashFlow] = useState<number | null>(null);
     const [runningAutopay, setRunningAutopay] = useState(false);
     const [autopayFeedback, setAutopayFeedback] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [chartMode, setChartMode] = useState<'cumulative' | 'daily'>('cumulative');
 
     const handleExport = () => {
         setIsExporting(true);
@@ -61,7 +63,7 @@ export default function GoalDetailsPage() {
         setAutopayFeedback(null);
         try {
             const res = await api.goals.runAutopay(goalData.id);
-            setAutopayFeedback({ type: 'success', text: res.message || 'AutoPay executed successfully! Debited from Expense Tracker Net Cash Flow.' });
+            setAutopayFeedback({ type: 'success', text: res.message || 'AutoPay executed successfully! Debited from Main Account Balance.' });
             await fetchGoal();
             refreshUser();
         } catch (err: any) {
@@ -95,24 +97,103 @@ export default function GoalDetailsPage() {
     const { auto_saving, transactions, delay_history, ...goal } = goalData;
     const progress = goal.target_amount > 0 ? (goal.saved_amount / goal.target_amount) * 100 : 0;
     const progressCapped = Math.min(progress, 100).toFixed(0);
+    const rewardCoins = goal.completion_reward_coins || getGoalCompletionCoins(goal.target_amount);
 
-    // Chart data mapping (Cumulative Savings over time)
-    // We reverse transactions because they come ordered by desc, we want asc for chart
-    const ascTransactions = [...transactions].reverse();
-    let cumulative = 0;
-    const chartData = ascTransactions.filter(t => t.type === 'CREDIT').map(t => {
-        cumulative += t.amount;
-        return {
-            date: new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-            Saved: cumulative
-        };
+    // ── Build comprehensive chart data for savings trend across previous days ──
+    // Include both AutoPay (successful) and Manual credits (e.g. skipped purchases)
+    const validTxs = (transactions || []).filter((t: any) =>
+        (t.type === 'GOAL_AUTOPAY' && (t.status === 'SUCCESS' || !t.status)) ||
+        (t.type === 'CREDIT')
+    );
+
+    // Group valid deposits by local date string YYYY-MM-DD
+    const dailyMap: Record<string, number> = {};
+    validTxs.forEach((t: any) => {
+        const d = new Date(t.created_at);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const key = `${y}-${m}-${day}`;
+        dailyMap[key] = (dailyMap[key] || 0) + Number(t.amount || 0);
     });
-    // Add current state as the last point if empty or to ensure it matches
-    if (chartData.length === 0 || chartData[chartData.length - 1].Saved !== goal.saved_amount) {
+
+    const today = new Date();
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    // Earliest date from goal.created_at or earliest tx
+    let startD = goal.created_at ? new Date(goal.created_at) : todayMidnight;
+    validTxs.forEach((t: any) => {
+        const d = new Date(t.created_at);
+        if (d < startD) startD = d;
+    });
+    let startMidnight = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate());
+
+    const totalTxSavings = Object.values(dailyMap).reduce((acc, curr) => acc + curr, 0);
+    const baseSavings = Math.max(0, (goal.saved_amount || 0) - totalTxSavings);
+
+    const chartData: Array<{
+        date: string;
+        label: string;
+        fullDate: string;
+        Saved: number;
+        Daily: number;
+    }> = [];
+
+    const daySpan = Math.round((todayMidnight.getTime() - startMidnight.getTime()) / (1000 * 60 * 60 * 24));
+    let curDate = new Date(startMidnight);
+    let runningSaved = baseSavings;
+
+    // If span > 60 days, advance start to 60 days ago and aggregate prior savings
+    if (daySpan > 60) {
+        const cutoff = new Date(todayMidnight.getTime() - 60 * 24 * 60 * 60 * 1000);
+        while (curDate < cutoff) {
+            const y = curDate.getFullYear();
+            const m = String(curDate.getMonth() + 1).padStart(2, '0');
+            const day = String(curDate.getDate()).padStart(2, '0');
+            const key = `${y}-${m}-${day}`;
+            if (dailyMap[key]) {
+                runningSaved += dailyMap[key];
+            }
+            curDate.setDate(curDate.getDate() + 1);
+        }
+    }
+
+    // Prepend baseline Start point so chart always has an initial anchor
+    const startLabel = curDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    chartData.push({
+        date: 'Start',
+        label: `Start (${startLabel})`,
+        fullDate: 'start',
+        Saved: runningSaved,
+        Daily: 0
+    });
+
+    while (curDate <= todayMidnight) {
+        const y = curDate.getFullYear();
+        const m = String(curDate.getMonth() + 1).padStart(2, '0');
+        const day = String(curDate.getDate()).padStart(2, '0');
+        const key = `${y}-${m}-${day}`;
+        const dailyAmt = dailyMap[key] || 0;
+        runningSaved += dailyAmt;
+
+        const isToday = key === todayKey;
+        const dateLabel = curDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
         chartData.push({
-            date: 'Now',
-            Saved: goal.saved_amount
+            date: dateLabel,
+            label: isToday ? `${dateLabel} (Today)` : dateLabel,
+            fullDate: key,
+            Saved: runningSaved,
+            Daily: dailyAmt
         });
+
+        curDate.setDate(curDate.getDate() + 1);
+    }
+
+    // Ensure final point matches goal.saved_amount exactly
+    if (chartData.length > 1 && Math.abs(chartData[chartData.length - 1].Saved - (goal.saved_amount || 0)) > 0.01) {
+        chartData[chartData.length - 1].Saved = goal.saved_amount || 0;
     }
 
     return (
@@ -176,6 +257,14 @@ export default function GoalDetailsPage() {
                                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Est. Completion</p>
                                     <p className="text-xl font-bold text-gray-900 dark:text-white">{new Date(goal.current_completion_date).toLocaleDateString()}</p>
                                 </div>
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                        {goal.status === 'COMPLETED' ? 'Reward Won' : 'Completion Reward'}
+                                    </p>
+                                    <p className="text-xl font-bold text-amber-400 flex items-center gap-1.5">
+                                        <span>🪙</span> +{rewardCoins.toLocaleString()} Coins
+                                    </p>
+                                </div>
                             </div>
 
                             <div className="mt-8">
@@ -195,19 +284,124 @@ export default function GoalDetailsPage() {
 
                     {/* Chart & Auto Saving */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
-                            <h3 className="font-bold text-lg font-heading mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                                <Target className="w-5 h-5 text-gray-300" /> Saving Trend
-                            </h3>
-                            <div className="h-48">
+                        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                                        <Target className="w-4.5 h-4.5 text-emerald-400" />
+                                    </div>
+                                    <h3 className="font-bold text-lg font-heading text-gray-900 dark:text-white">
+                                        Saving Trend
+                                    </h3>
+                                </div>
+
+                                <div className="flex items-center bg-gray-100 dark:bg-[#0e0e0e] p-1 rounded-xl border border-gray-200 dark:border-[#262626] self-start sm:self-auto shadow-inner">
+                                    <button
+                                        onClick={() => setChartMode('cumulative')}
+                                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                                            chartMode === 'cumulative'
+                                                ? 'bg-white dark:bg-[#262626] text-gray-900 dark:text-white border border-gray-200 dark:border-[#3e3e3e] shadow-sm'
+                                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        Cumulative
+                                    </button>
+                                    <button
+                                        onClick={() => setChartMode('daily')}
+                                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                                            chartMode === 'daily'
+                                                ? 'bg-white dark:bg-[#262626] text-gray-900 dark:text-white border border-gray-200 dark:border-[#3e3e3e] shadow-sm'
+                                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        Daily Saved
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="h-56 w-full mt-2">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.2} />
-                                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                                        <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val / 1000}k`} />
-                                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                        <Line type="monotone" dataKey="Saved" stroke="#6366f1" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#6366f1' }} />
-                                    </LineChart>
+                                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="goalSavingGrad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={chartMode === 'cumulative' ? '#10b981' : '#38bdf8'} stopOpacity={0.28} />
+                                                <stop offset="95%" stopColor={chartMode === 'cumulative' ? '#10b981' : '#38bdf8'} stopOpacity={0.0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" opacity={0.35} />
+                                        <XAxis
+                                            dataKey="date"
+                                            tick={{ fontSize: 11, fill: '#71717a' }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            dy={6}
+                                            minTickGap={20}
+                                        />
+                                        <YAxis
+                                            tick={{ fontSize: 11, fill: '#71717a' }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tickFormatter={(val) => {
+                                                if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+                                                if (val >= 1000) return `₹${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}k`;
+                                                return `₹${val}`;
+                                            }}
+                                        />
+                                        <Tooltip
+                                            content={({ active, payload }) => {
+                                                if (!active || !payload || !payload.length) return null;
+                                                const pt = payload[0].payload;
+                                                const isDaily = chartMode === 'daily';
+                                                const val = isDaily ? pt.Daily : pt.Saved;
+                                                return (
+                                                    <div className="bg-[#18181b]/95 border border-white/10 rounded-2xl p-3 shadow-xl backdrop-blur-md">
+                                                        <p className="text-xs font-bold text-gray-400 mb-1">{pt.label || pt.date}</p>
+                                                        <div className="flex items-baseline gap-1.5">
+                                                            <span className="text-base font-black text-white">
+                                                                ₹{Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                            </span>
+                                                            <span className={`text-[11px] font-semibold ${isDaily ? 'text-sky-400' : 'text-emerald-400'}`}>
+                                                                {isDaily ? 'saved on this day' : 'cumulative saved'}
+                                                            </span>
+                                                        </div>
+                                                        {!isDaily && pt.Daily > 0 && (
+                                                            <p className="text-[11px] text-emerald-400/90 font-medium mt-1">
+                                                                +₹{pt.Daily.toLocaleString('en-IN')} added on this day
+                                                            </p>
+                                                        )}
+                                                        {!isDaily && goal.target_amount > 0 && (
+                                                            <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-gray-400 gap-4">
+                                                                <span>Target: ₹{goal.target_amount.toLocaleString('en-IN')}</span>
+                                                                <span className="font-bold text-emerald-400">
+                                                                    {Math.min(100, (pt.Saved / goal.target_amount) * 100).toFixed(1)}% reached
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            }}
+                                        />
+                                        <Area
+                                            type="monotone"
+                                            dataKey={chartMode === 'cumulative' ? 'Saved' : 'Daily'}
+                                            stroke={chartMode === 'cumulative' ? '#10b981' : '#38bdf8'}
+                                            strokeWidth={2.5}
+                                            fillOpacity={1}
+                                            fill="url(#goalSavingGrad)"
+                                            dot={{
+                                                r: 3.5,
+                                                fill: chartMode === 'cumulative' ? '#10b981' : '#38bdf8',
+                                                stroke: '#09090b',
+                                                strokeWidth: 2
+                                            }}
+                                            activeDot={{
+                                                r: 6,
+                                                fill: chartMode === 'cumulative' ? '#10b981' : '#38bdf8',
+                                                stroke: '#ffffff',
+                                                strokeWidth: 2
+                                            }}
+                                        />
+                                    </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
@@ -222,7 +416,7 @@ export default function GoalDetailsPage() {
                                         onClick={handleRunAutopay}
                                         disabled={runningAutopay}
                                         className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-black font-bold text-xs rounded-xl hover:bg-gray-200 transition-colors shadow-sm disabled:opacity-50"
-                                        title="Debits directly from Expense Tracker Net Cash Flow"
+                                        title="Debits directly from Main Account Balance"
                                     >
                                         <Zap className="w-3.5 h-3.5" />
                                         {runningAutopay ? 'Running...' : 'Run AutoPay'}
@@ -268,10 +462,10 @@ export default function GoalDetailsPage() {
                                     </div>
                                     <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                                         <span className="text-sm text-gray-500">Funding Source</span>
-                                        <span className="font-bold text-xs text-gray-900 dark:text-white">Expense Tracker Net Cash Flow</span>
+                                        <span className="font-bold text-xs text-gray-900 dark:text-white">Main Account Balance</span>
                                     </div>
                                     <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                                        <span className="text-sm text-gray-500">Surplus Balance</span>
+                                        <span className="text-sm text-gray-500">Available Balance</span>
                                         <span className={`font-bold ${netCashFlow != null && netCashFlow >= (auto_saving.amount || 0) ? 'text-emerald-400' : 'text-amber-400'}`}>
                                             {netCashFlow != null ? `₹${netCashFlow.toLocaleString()}` : '-'}
                                         </span>
@@ -342,22 +536,58 @@ export default function GoalDetailsPage() {
                             {transactions.length === 0 ? (
                                 <p className="text-sm text-gray-500 text-center py-4">No activity yet.</p>
                             ) : (
-                                transactions.slice(0, 5).map((t: any) => (
-                                    <div key={t.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-full ${t.type === 'CREDIT' ? 'bg-[#111] text-gray-400 dark:bg-[#111]' : 'bg-red-100 text-red-600 dark:bg-red-900/30'}`}>
-                                                {t.type === 'CREDIT' ? <CreditCard className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+                                transactions.slice(0, 5).map((t: any) => {
+                                    const isAutoPay = t.type === 'GOAL_AUTOPAY';
+                                    const isCredit = t.type === 'CREDIT';
+                                    const isSplurge = t.type === 'SPLURGE';
+                                    const isSuccess = t.status === 'SUCCESS' || !t.status;
+
+                                    let iconNode = <CreditCard className="w-4 h-4" />;
+                                    let iconBg = 'bg-[#111] text-gray-400 dark:bg-[#111]';
+                                    let amountSign = '+';
+                                    let amountClass = 'text-gray-300 dark:text-white';
+
+                                    if (isAutoPay) {
+                                        if (isSuccess) {
+                                            iconNode = <Zap className="w-4 h-4 text-emerald-400" />;
+                                            iconBg = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                                            amountSign = '+';
+                                            amountClass = 'text-emerald-400';
+                                        } else {
+                                            iconNode = <XCircle className="w-4 h-4 text-red-400" />;
+                                            iconBg = 'bg-red-500/10 text-red-400 border border-red-500/20';
+                                            amountSign = '';
+                                            amountClass = 'text-red-400';
+                                        }
+                                    } else if (isCredit) {
+                                        iconNode = <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
+                                        iconBg = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                                        amountSign = '+';
+                                        amountClass = 'text-emerald-400';
+                                    } else if (isSplurge) {
+                                        iconNode = <ShoppingCart className="w-4 h-4 text-amber-400" />;
+                                        iconBg = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+                                        amountSign = '-';
+                                        amountClass = 'text-amber-400';
+                                    }
+
+                                    return (
+                                        <div key={t.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`p-2 rounded-full ${iconBg}`}>
+                                                    {iconNode}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-sm text-gray-900 dark:text-white">{t.description || (isAutoPay ? 'Goal AutoPay' : t.type)}</p>
+                                                    <p className="text-xs text-gray-500">{new Date(t.created_at).toLocaleDateString()}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-bold text-sm text-gray-900 dark:text-white">{t.description}</p>
-                                                <p className="text-xs text-gray-500">{new Date(t.created_at).toLocaleDateString()}</p>
+                                            <div className={`font-bold text-sm ${amountClass}`}>
+                                                {amountSign}₹{Number(t.amount || 0).toLocaleString()}
                                             </div>
                                         </div>
-                                        <div className={`font-bold text-sm ${t.type === 'CREDIT' ? 'text-gray-300' : 'text-red-500'}`}>
-                                            {t.type === 'CREDIT' ? '+' : '-'}₹{t.amount.toLocaleString()}
-                                        </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>
@@ -383,7 +613,7 @@ export default function GoalDetailsPage() {
                                 <th className="pb-4 font-semibold px-4 text-center">Status</th>
                                 <th className="pb-4 font-semibold px-4">Source</th>
                                 <th className="pb-4 font-semibold px-4 text-right">Remaining Goal</th>
-                                <th className="pb-4 font-semibold px-4 text-right">Net Cash Flow Available</th>
+                                <th className="pb-4 font-semibold px-4 text-right">Total Saved</th>
                             </tr>
                         </thead>
                         <tbody>

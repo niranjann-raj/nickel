@@ -1,7 +1,7 @@
 import MatrixLoader from '../../../components/ui/MatrixLoader';
 import SoundWave from '../../../components/ui/SoundWave';
 import { useState, useEffect, useRef, type FormEvent } from 'react';
-import { Sparkles, Send, RefreshCw, MessageSquare, ShieldCheck, ChevronRight, Mic } from 'lucide-react';
+import { Send, RefreshCw, MessageSquare, ShieldCheck, ChevronRight, Mic } from 'lucide-react';
 import { api } from '../../api';
 
 interface TrackerAiInsightsCardProps {
@@ -134,19 +134,13 @@ export default function TrackerAiInsightsCard({ startDate, endDate }: TrackerAiI
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 relative z-10 border-b border-white/5 pb-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center text-white shadow-md">
-                        <Sparkles className="w-5 h-5 text-gray-200" />
+                    <div className="w-10 h-10 rounded-xl bg-[#141416] border border-white/10 flex items-center justify-center overflow-hidden shadow-md p-1 flex-shrink-0">
+                        <img src="/ai.png" alt="nickel AI" className="w-full h-full rounded-lg object-cover" />
                     </div>
                     <div>
-                        <h3 className="font-heading font-bold text-base text-white flex items-center gap-2">
-                            Nickel AI Spending Insights
-                            <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-white/10 text-gray-300 border border-white/10">
-                                Powered by Gemini
-                            </span>
+                        <h3 className="font-heading font-bold text-base text-white">
+                            nickel AI Spending Insights
                         </h3>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                            Personalized spending diagnostics and savings optimization for this period
-                        </p>
                     </div>
                 </div>
 

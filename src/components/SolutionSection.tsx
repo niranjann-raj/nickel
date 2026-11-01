@@ -7,8 +7,7 @@ export default function SolutionSection() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="mb-14 observe-animate">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-semibold tracking-wider text-zinc-300 uppercase mb-6">
-                        <span className="w-1.5 h-1.5 rounded-sm bg-emerald-400"></span>
+                    <div className="inline-flex items-center px-3 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-semibold tracking-wider text-zinc-300 uppercase mb-6">
                         <span>Why Nickel</span>
                     </div>
                     <h2 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white max-w-4xl leading-[1.15]">

@@ -67,8 +67,17 @@ export default function TrackerOverviewCards({ data, loading }: TrackerOverviewC
                     <div className="text-xl font-bold text-white tracking-tight">
                         {formatINR(data.totals.total_income)}
                     </div>
-                    <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
-                        <span>Period total</span>
+                    <div className="text-[11px] mt-1 flex items-center gap-1">
+                        {data.comparison.previous_income > 0 ? (
+                            <>
+                                <span className={data.comparison.income_change_percentage >= 0 ? "text-emerald-400 font-semibold" : "text-amber-400 font-semibold"}>
+                                    {data.comparison.income_change_percentage > 0 ? `+${data.comparison.income_change_percentage}%` : `${data.comparison.income_change_percentage}%`}
+                                </span>
+                                <span className="text-gray-500">vs prev</span>
+                            </>
+                        ) : (
+                            <span className="text-gray-400">Period total</span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -86,15 +95,17 @@ export default function TrackerOverviewCards({ data, loading }: TrackerOverviewC
                         {formatINR(data.totals.total_expenses)}
                     </div>
                     <div className="text-[11px] mt-1 flex items-center gap-1">
-                        {expChange !== 0 ? (
+                        {data.comparison.previous_expenses > 0 ? (
                             <>
                                 <span className={isExpUp ? "text-rose-400 font-semibold" : "text-emerald-400 font-semibold"}>
-                                    {isExpUp ? `+${expChange}%` : `${expChange}%`}
+                                    {expChange > 0 ? `+${expChange}%` : `${expChange}%`}
                                 </span>
                                 <span className="text-gray-500">vs prev</span>
                             </>
+                        ) : data.totals.total_expenses > 0 ? (
+                            <span className="text-gray-400">Period total</span>
                         ) : (
-                            <span className="text-gray-500">Same as prev period</span>
+                            <span className="text-gray-500">No expenses</span>
                         )}
                     </div>
                 </div>

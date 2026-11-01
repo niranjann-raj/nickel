@@ -413,9 +413,18 @@ def get_summary():
         else:
             monthly_sub_cost += s_amt
 
-    # Previous period comparison (same duration immediately preceding start_date)
-    prev_end_date = start_date - timedelta(days=1)
-    prev_start_date = prev_end_date - timedelta(days=period_days - 1)
+    # Previous period comparison:
+    # If viewing a month-based period (starts on the 1st of a month):
+    # compare against the preceding full calendar month (e.g., November compares to October 1-31).
+    if start_date.day == 1 and (end_date.year == start_date.year and end_date.month == start_date.month):
+        prev_end_date = start_date - timedelta(days=1)
+        prev_start_date = prev_end_date.replace(day=1)
+    elif start_date.day == 1 and (end_date + timedelta(days=1)).day == 1:
+        prev_end_date = start_date - timedelta(days=1)
+        prev_start_date = prev_end_date.replace(day=1)
+    else:
+        prev_end_date = start_date - timedelta(days=1)
+        prev_start_date = prev_end_date - timedelta(days=period_days - 1)
 
     prev_txs = TrackerTransaction.query.filter(
         TrackerTransaction.user_id == user.id,
@@ -477,6 +486,44 @@ def get_summary():
             'income_change_amount': income_diff,
             'income_change_percentage': income_pct
         }
+    }), 200
+
+
+@tracker_bp.route('/balance', methods=['GET'])
+@jwt_required()
+def get_tracker_balance():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Single source of truth: Expense Tracker data for authenticated user only
+    # Cumulative Net Cash Flow = Total Income Since Tracking Started - Total Expenses Since Tracking Started
+    total_income = db.session.query(
+        func.coalesce(func.sum(TrackerTransaction.amount), Decimal('0.00'))
+    ).filter(
+        TrackerTransaction.user_id == user.id,
+        TrackerTransaction.type == 'INCOME'
+    ).scalar()
+
+    total_expenses = db.session.query(
+        func.coalesce(func.sum(TrackerTransaction.amount), Decimal('0.00'))
+    ).filter(
+        TrackerTransaction.user_id == user.id,
+        TrackerTransaction.type == 'EXPENSE'
+    ).scalar()
+
+    initial_balance = Decimal('0.00')
+    cumulative_net_cash_flow = Decimal(str(total_income)) - Decimal(str(total_expenses))
+    current_balance = initial_balance + cumulative_net_cash_flow
+
+    return jsonify({
+        'current_balance': float(current_balance),
+        'total_balance': float(current_balance),
+        'total_income': float(total_income),
+        'total_expenses': float(total_expenses),
+        'initial_balance': float(initial_balance),
+        'currency': 'INR',
+        'currency_symbol': '₹'
     }), 200
 
 
@@ -1144,8 +1191,8 @@ def get_ai_insights():
 
             prompt = f"{prompt_context}\n\nUser Question/Request:\n{user_query}"
 
-            preferred_model = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash')
-            candidate_models = [preferred_model, 'gemini-flash-latest', 'gemini-2.0-flash']
+            preferred_model = os.environ.get('GEMINI_MODEL', 'gemini-flash-lite-latest')
+            candidate_models = [preferred_model, 'gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-flash-latest']
             seen = set()
             models = [m for m in candidate_models if not (m in seen or seen.add(m))]
 

@@ -28,14 +28,12 @@ export default function RecordPaymentModal({
     suggestedTransfer,
     onPaymentRecorded
 }: RecordPaymentModalProps) {
-    const [amount, setAmount] = useState('');
     const [notes, setNotes] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (suggestedTransfer) {
-            setAmount(String(suggestedTransfer.amount || ''));
             setNotes('');
             setError(null);
         }
@@ -44,16 +42,13 @@ export default function RecordPaymentModal({
     if (!isOpen || !suggestedTransfer) return null;
 
     const originalSuggested = suggestedTransfer.amount || 0;
-    const enteredAmount = parseFloat(amount) || 0;
-    const remainingAmount = Math.max(0, Math.round((originalSuggested - enteredAmount) * 100) / 100);
-    const isPartial = enteredAmount > 0 && enteredAmount < originalSuggested;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
 
-        if (enteredAmount <= 0) {
-            setError('Please enter a payment amount greater than zero.');
+        if (originalSuggested <= 0) {
+            setError('Payment amount must be greater than zero.');
             return;
         }
 
@@ -63,7 +58,7 @@ export default function RecordPaymentModal({
             const res = await api.split.recordPayment(roomId, {
                 payer_id: suggestedTransfer.from_user_id,
                 recipient_id: suggestedTransfer.to_user_id,
-                amount: enteredAmount,
+                amount: originalSuggested,
                 notes: notes.trim() || undefined
             });
 
@@ -153,44 +148,24 @@ export default function RecordPaymentModal({
                         </div>
                     </div>
 
-                    {/* Amount Input (Supports Partial Payments) */}
+                    {/* Fixed Settlement Amount Display (Non-modifiable) */}
                     <div>
                         <div className="flex items-center justify-between mb-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
-                                Payment Amount ({currency}) <span className="text-rose-500">*</span>
+                                Payment Amount ({currency})
                             </label>
-                            <span className="text-xs text-gray-400">
-                                Suggested: {currency} {originalSuggested.toFixed(2)}
+                            <span className="text-[11px] font-semibold text-emerald-400">
+                                Exact Settlement
                             </span>
                         </div>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            required
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            placeholder="0.00"
-                            className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-[#18181c] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white font-mono font-bold text-lg focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20"
-                        />
-
-                        {/* Partial Payment Calculation */}
-                        {isPartial && (
-                            <div className="mt-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-400 space-y-1">
-                                <div className="flex justify-between">
-                                    <span>Original obligation:</span>
-                                    <span className="font-mono font-semibold">{currency} {originalSuggested.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Paying now:</span>
-                                    <span className="font-mono font-semibold">{currency} {enteredAmount.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between font-bold border-t border-amber-500/20 pt-1">
-                                    <span>Remaining balance:</span>
-                                    <span className="font-mono">{currency} {remainingAmount.toFixed(2)}</span>
-                                </div>
-                            </div>
-                        )}
+                        <div className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-[#18181c] border border-gray-200 dark:border-white/10 flex items-center justify-between select-none">
+                            <span className="text-2xl font-mono font-black text-gray-900 dark:text-white">
+                                {currency} {Number(originalSuggested).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </span>
+                            <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Fixed
+                            </span>
+                        </div>
                     </div>
 
                     {/* Notes */}
@@ -221,13 +196,13 @@ export default function RecordPaymentModal({
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        disabled={loading || enteredAmount <= 0}
+                        disabled={loading || originalSuggested <= 0}
                         className="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-zinc-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
                     >
                         {loading ? (
                             <MatrixLoader size="sm" variant="orbit" rounded baseColor="#71717a" activeColor="#09090b" />
                         ) : (
-                            <span>Record Payment of {currency} {enteredAmount > 0 ? enteredAmount.toFixed(2) : '0.00'}</span>
+                            <span>Record Payment of {currency} {Number(originalSuggested).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                         )}
                     </button>
                 </form>

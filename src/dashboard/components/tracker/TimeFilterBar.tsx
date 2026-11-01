@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { Calendar } from 'lucide-react';
+import { Calendar as CustomCalendar } from '@/components/ui/calendar';
 
 export type FilterPeriod = 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'last_3_months' | 'all_time' | 'custom';
 
@@ -67,6 +68,7 @@ export default function TimeFilterBar({ period, startDate, endDate, onPeriodChan
     const [showCustom, setShowCustom] = useState(period === 'custom');
     const [customStart, setCustomStart] = useState(startDate);
     const [customEnd, setCustomEnd] = useState(endDate);
+    const [showCalendar, setShowCalendar] = useState(false);
 
     const options: { id: FilterPeriod; label: string }[] = [
         { id: 'this_week', label: 'This Week' },
@@ -84,15 +86,9 @@ export default function TimeFilterBar({ period, startDate, endDate, onPeriodChan
             onPeriodChange('custom', customStart, customEnd);
         } else {
             setShowCustom(false);
+            setShowCalendar(false);
             const { start, end } = computeDatesForPeriod(p);
             onPeriodChange(p, start, end);
-        }
-    };
-
-    const handleCustomApply = (e: FormEvent) => {
-        e.preventDefault();
-        if (customStart && customEnd) {
-            onPeriodChange('custom', customStart, customEnd);
         }
     };
 
@@ -131,33 +127,68 @@ export default function TimeFilterBar({ period, startDate, endDate, onPeriodChan
             </div>
 
             {/* Date Range Display & Custom Inputs */}
-            <div className="flex items-center gap-2 text-xs text-gray-400 self-end md:self-auto">
+            <div className="relative flex items-center gap-2 text-xs text-gray-400 self-end md:self-auto">
                 {showCustom ? (
-                    <form onSubmit={handleCustomApply} className="flex items-center gap-2">
-                        <input
-                            type="date"
-                            value={customStart}
-                            onChange={(e) => setCustomStart(e.target.value)}
-                            className="bg-[#18181b] border border-white/10 text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-white/30"
-                        />
-                        <span>to</span>
-                        <input
-                            type="date"
-                            value={customEnd}
-                            onChange={(e) => setCustomEnd(e.target.value)}
-                            className="bg-[#18181b] border border-white/10 text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-white/30"
-                        />
-                        <button
-                            type="submit"
-                            className="px-2.5 py-1 bg-white text-black font-semibold rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                            Apply
-                        </button>
-                    </form>
+                    <button
+                        type="button"
+                        onClick={() => setShowCalendar(p => !p)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer ${
+                            showCalendar ? 'bg-white/15 border-white/20 text-white' : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                        }`}
+                    >
+                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                        <span>{formatDisplayRange(customStart || startDate, customEnd || endDate)}</span>
+                        <span className="text-[10px] text-gray-400 underline decoration-dotted">Pick Dates</span>
+                    </button>
                 ) : (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/5 text-gray-300 font-medium">
+                    <button
+                        type="button"
+                        onClick={() => setShowCalendar(p => !p)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-gray-300 font-medium transition-colors cursor-pointer ${showCalendar ? 'bg-white/15 border-white/20 text-white' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}
+                    >
                         <Calendar className="w-3.5 h-3.5 text-gray-400" />
                         <span>{formatDisplayRange(startDate, endDate)}</span>
+                        <span className="text-[10px] text-gray-400 ml-1 underline decoration-dotted">Show Calendar</span>
+                    </button>
+                )}
+
+                {showCalendar && (
+                    <div className="absolute right-0 top-full mt-2 z-50 p-3 bg-[#111113] border border-white/15 rounded-2xl shadow-2xl backdrop-blur-xl">
+                        <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10 text-xs text-gray-300 font-semibold">
+                            <span>Pick Date Range</span>
+                            <button
+                                type="button"
+                                onClick={() => setShowCalendar(false)}
+                                className="text-gray-400 hover:text-white px-1 text-sm leading-none"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <CustomCalendar
+                            mode="range"
+                            selected={{
+                                from: customStart ? new Date(customStart + 'T00:00:00') : (startDate ? new Date(startDate + 'T00:00:00') : undefined),
+                                to: customEnd ? new Date(customEnd + 'T00:00:00') : (endDate ? new Date(endDate + 'T00:00:00') : undefined),
+                            }}
+                            onSelect={(range) => {
+                                if (range?.from) {
+                                    const y = range.from.getFullYear();
+                                    const m = String(range.from.getMonth() + 1).padStart(2, '0');
+                                    const d = String(range.from.getDate()).padStart(2, '0');
+                                    const startStr = `${y}-${m}-${d}`;
+                                    setCustomStart(startStr);
+                                    if (range.to) {
+                                        const y2 = range.to.getFullYear();
+                                        const m2 = String(range.to.getMonth() + 1).padStart(2, '0');
+                                        const d2 = String(range.to.getDate()).padStart(2, '0');
+                                        const endStr = `${y2}-${m2}-${d2}`;
+                                        setCustomEnd(endStr);
+                                        onPeriodChange('custom', startStr, endStr);
+                                        setShowCalendar(false);
+                                    }
+                                }
+                            }}
+                        />
                     </div>
                 )}
             </div>

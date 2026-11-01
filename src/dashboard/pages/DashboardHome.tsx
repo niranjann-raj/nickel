@@ -1,28 +1,12 @@
 import MatrixLoader from '../../components/ui/MatrixLoader';
 import UserSummaryCard from '../components/UserSummaryCard';
+import NickelDebitCard from '../components/NickelDebitCard';
 import LeaderboardCard from '../components/LeaderboardCard';
 import SavingGraphCard from '../components/SavingGraphCard';
 import { useDashboard } from '../DashboardLayout';
-import { Zap, Flame, IndianRupee, Star, Activity } from 'lucide-react';
 
 export default function DashboardHome() {
-    const { user, loading } = useDashboard();
-
-    const getLifetimeXP = () => {
-        if (!user) return 0;
-        let total = user.xp;
-        for (let i = 1; i < user.level; i++) {
-            total += 1000 + (i - 1) * 500;
-        }
-        return total;
-    };
-
-    const stats = [
-        { icon: Flame, label: 'Current Streak', value: `${user?.current_streak ?? 0} days`, color: 'text-gray-300', bg: 'bg-[#1a1a1a] dark:bg-[#111]' },
-        { icon: Zap, label: 'Available Coins', value: (user?.coins ?? 0).toLocaleString(), color: 'text-gray-300', bg: 'bg-[#1a1a1a] dark:bg-[#111]' },
-        { icon: IndianRupee, label: 'Total Saved', value: `₹${(user?.total_saved ?? 0).toLocaleString()}`, color: 'text-gray-300', bg: 'bg-[#1a1a1a] dark:bg-[#111]' },
-        { icon: Star, label: 'Lifetime XP', value: getLifetimeXP().toLocaleString(), color: 'text-gray-300', bg: 'bg-[#1a1a1a] dark:bg-[#111]' },
-    ];
+    const { loading } = useDashboard();
 
     if (loading) {
         return (
@@ -45,14 +29,15 @@ export default function DashboardHome() {
                 </p>
             </div>
 
-
-
             {/* Main Content Grid: 60/40 Split */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 
                 {/* Left Column (takes 2 of 3 col span) */}
                 <div className="lg:col-span-2 space-y-6">
-                    <UserSummaryCard />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <UserSummaryCard />
+                        <NickelDebitCard />
+                    </div>
                     <SavingGraphCard />
                 </div>
 

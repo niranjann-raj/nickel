@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { X, Plus, AlertCircle } from 'lucide-react';
+import { X, Plus, AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
 import { api } from '../../api';
 import { TrackerTransactionItem } from './TransactionTable';
 
@@ -25,6 +26,7 @@ export default function AddTransactionModal({
     const [categoryName, setCategoryName] = useState('');
     const [merchant, setMerchant] = useState('');
     const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
+    const [showCalendar, setShowCalendar] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('UPI');
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState('');
@@ -58,6 +60,7 @@ export default function AddTransactionModal({
     const resetForm = () => {
         setType('EXPENSE');
         setAmount('');
+            setShowCalendar(false);
         setCategoryName(categories[0]?.name || 'Food & Dining');
         setMerchant('');
         setTxDate(new Date().toISOString().split('T')[0]);
@@ -292,14 +295,37 @@ export default function AddTransactionModal({
                             />
                         </div>
                         <div>
-                            <label className="text-gray-400 font-semibold mb-1.5 block">Date</label>
-                            <input
-                                type="date"
-                                required
-                                value={txDate}
-                                onChange={(e) => setTxDate(e.target.value)}
-                                className="w-full bg-[#18181b] border border-white/10 rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-white/30 cursor-pointer"
-                            />
+                            <label className="text-gray-400 font-semibold block mb-1.5">Date</label>
+                            <button
+                                type="button"
+                                onClick={() => setShowCalendar(prev => !prev)}
+                                className="w-full flex items-center justify-between bg-[#18181b] border border-white/10 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-white/30 cursor-pointer text-sm group hover:border-white/20 transition-colors"
+                            >
+                                <span className={txDate ? 'font-medium text-white' : 'text-gray-400'}>
+                                    {txDate
+                                        ? new Date(txDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                        : 'Select date...'}
+                                </span>
+                                <CalendarIcon className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                            </button>
+                            {showCalendar && (
+                                <div className="mt-2 p-2 bg-[#121214] border border-white/10 rounded-2xl flex flex-col items-center shadow-xl animate-in fade-in zoom-in-95 duration-150">
+                                    <Calendar
+                                        mode="single"
+                                        selected={txDate ? new Date(txDate + 'T00:00:00') : undefined}
+                                        onSelect={(d) => {
+                                            if (d) {
+                                                const y = d.getFullYear();
+                                                const m = String(d.getMonth() + 1).padStart(2, '0');
+                                                const day = String(d.getDate()).padStart(2, '0');
+                                                setTxDate(`${y}-${m}-${day}`);
+                                                setShowCalendar(false);
+                                            }
+                                        }}
+                                        className="w-full"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 

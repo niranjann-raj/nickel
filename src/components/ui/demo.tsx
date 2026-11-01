@@ -1,11 +1,29 @@
 "use client";
 
-import { NotFoundGlitch } from "./be-ui-404-not-found";
 
-export default function NotFoundGlitchPreview() {
-  return (
-    <div className="w-full">
-      <NotFoundGlitch />
-    </div>
-  );
+
+import * as React from "react";
+
+import { Calendar } from "@/components/ui/calendar";
+
+
+
+const today = new Date();
+
+
+
+export function CalendarPreview() {
+
+  const [selected, setSelected] = React.useState<Date | undefined>(today);
+
+  return <Calendar selected={selected} onSelect={setSelected} />;
+
+}
+
+
+
+export default function Demo() {
+
+  return <CalendarPreview />;
+
 }

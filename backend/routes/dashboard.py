@@ -72,6 +72,17 @@ def total_xp_for_level(level: int) -> int:
     if n <= 0: return 0
     return (n * (2000 + (n - 1) * 500)) // 2
 
+def coins_for_level_up(level: int) -> int:
+    """Calculate Gold Coins reward awarded when reaching a new level:
+    - Levels 1 – 10:  +25 Gold Coins
+    - Levels 11 – 20: +50 Gold Coins
+    - Levels 21 – 30: +75 Gold Coins
+    - Levels 31 – 40: +100 Gold Coins
+    - Tiers above 40 continue at +25 coins per 10 levels.
+    """
+    tier = max(0, (level - 1) // 10)
+    return 25 + (tier * 25)
+
 def level_up(user: User):
     """Check and apply level-up(s) based on cumulative lifetime XP."""
     while True:
@@ -80,9 +91,18 @@ def level_up(user: User):
             user.level += 1
             
             # Award Gold Coins based on new level tier
-            # Level 1-10 -> 10, 11-20 -> 15, 21-30 -> 20, etc.
-            coins_reward = 10 + ((user.level - 1) // 10) * 5
+            coins_reward = coins_for_level_up(user.level)
             user.coins += coins_reward
+            try:
+                notif = Notification(
+                    user_id=user.id,
+                    title=f"Level Up! Level {user.level} 🎖️",
+                    message=f"Congratulations! You reached Level {user.level} and earned {coins_reward} Gold Coins!",
+                    type="reward"
+                )
+                db.session.add(notif)
+            except Exception:
+                pass
         else:
             break
 
@@ -121,14 +141,15 @@ def streak():
 def generate_with_gemini(client, contents, config=None) -> str:
     """
     Generates content using Gemini. Starts with the configured model
-    (defaults to gemini-3.6-flash), and automatically falls back to reliable
+    (defaults to gemini-flash-lite-latest), and automatically falls back to reliable
     flash models if high demand (503) or discontinued model (404) errors occur.
     """
-    preferred_model = os.environ.get('GEMINI_MODEL', 'gemini-3.6-flash')
+    preferred_model = os.environ.get('GEMINI_MODEL', 'gemini-flash-lite-latest')
     candidate_models = [
         preferred_model,
         'gemini-flash-lite-latest',
         'gemini-3.5-flash-lite',
+        'gemini-3.6-flash',
         'gemini-flash-latest',
         'gemini-3.1-flash-lite',
     ]
@@ -561,7 +582,28 @@ Here is the current user's financial context:
             cash_flow = get_user_net_cash_flow(user.id)
             reply = f"Your current Expense Tracker Net Cash Flow balance is ₹{cash_flow:,.2f}."
         elif 'goal' in msg_lower:
-            reply = "You can view your active goals and their progress directly on your dashboard."
+            from models import Goal
+            user_goals = Goal.query.filter_by(user_id=user.id, status='ACTIVE').all()
+            if user_goals:
+                goal_summary = ", ".join([f"'{g.name}' (₹{g.saved_amount:,.0f}/₹{g.target_amount:,.0f})" for g in user_goals])
+                reply = f"You have {len(user_goals)} active goals: {goal_summary}."
+            else:
+                reply = "You currently have no active goals set up."
+        elif 'spend' in msg_lower or 'spent' in msg_lower or 'expense' in msg_lower or 'cost' in msg_lower:
+            from models import TrackerTransaction
+            txs = TrackerTransaction.query.filter_by(user_id=user.id, type='EXPENSE').order_by(TrackerTransaction.amount.desc()).all()
+            if txs:
+                top = txs[0]
+                label = top.merchant or top.description or top.category_name or 'Expense'
+                reply = f"Based on your Expense Tracker records, your largest expense was ₹{float(top.amount):,.2f} on '{label}' under the '{top.category_name}' category."
+            else:
+                reply = "You don't have any expense transactions recorded in your Expense Tracker yet."
+        elif 'saved' in msg_lower or 'saving' in msg_lower:
+            from models import Goal
+            total_saved = sum(float(g.saved_amount or 0) for g in Goal.query.filter_by(user_id=user.id).all())
+            reply = f"You have saved a total of ₹{total_saved:,.2f} across your Goal-Based Savings."
+        elif 'streak' in msg_lower:
+            reply = f"Your current daily saving streak is {user.get_active_streak()} days."
         else:
             reply = get_finance_fallback(user_message)
         return jsonify({'reply': reply, 'fallback': True}), 200

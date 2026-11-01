@@ -44,8 +44,15 @@ export const api = {
     upload: (path: string, formData: FormData) => apiUpload(path, formData),
         
     goals: {
-        runAutopay: (goalId: number) => apiFetch(`/api/goals/${goalId}/autopay/run`, { method: 'POST' }),
+        runAutopay: async (goalId: number) => {
+            const res = await apiFetch(`/api/goals/${goalId}/autopay/run`, { method: 'POST' });
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('nickel:tracker-updated'));
+            }
+            return res;
+        },
         getNetCashFlow: () => apiFetch('/api/goals/net-cash-flow', { method: 'GET' }),
+        getAccountBalance: () => apiFetch('/api/goals/account-balance', { method: 'GET' }),
     },
     gamification: {
         spinStatus: () => apiFetch('/api/gamification/spin/status', { method: 'GET' }),
@@ -75,7 +82,7 @@ export const api = {
             if (params?.limit) query.set('limit', String(params.limit));
             return apiFetch(`/api/tracker/transactions?${query.toString()}`, { method: 'GET' });
         },
-        createTransaction: (data: {
+        createTransaction: async (data: {
             type: 'EXPENSE' | 'INCOME';
             amount: number;
             currency?: string;
@@ -87,12 +94,28 @@ export const api = {
             tags?: string | string[];
             bill_upload_id?: number | null;
             is_subscription?: boolean;
-        }) => apiFetch('/api/tracker/transactions', { method: 'POST', body: JSON.stringify(data) }),
+        }) => {
+            const res = await apiFetch('/api/tracker/transactions', { method: 'POST', body: JSON.stringify(data) });
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('nickel:tracker-updated'));
+            }
+            return res;
+        },
         getTransaction: (id: number) => apiFetch(`/api/tracker/transactions/${id}`, { method: 'GET' }),
-        updateTransaction: (id: number, data: object) =>
-            apiFetch(`/api/tracker/transactions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        deleteTransaction: (id: number) =>
-            apiFetch(`/api/tracker/transactions/${id}`, { method: 'DELETE' }),
+        updateTransaction: async (id: number, data: object) => {
+            const res = await apiFetch(`/api/tracker/transactions/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('nickel:tracker-updated'));
+            }
+            return res;
+        },
+        deleteTransaction: async (id: number) => {
+            const res = await apiFetch(`/api/tracker/transactions/${id}`, { method: 'DELETE' });
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('nickel:tracker-updated'));
+            }
+            return res;
+        },
 
         getCategories: () => apiFetch('/api/tracker/categories', { method: 'GET' }),
         createCategory: (data: { name: string; type?: string; icon?: string; color?: string }) =>
@@ -100,6 +123,7 @@ export const api = {
         deleteCategory: (id: number) =>
             apiFetch(`/api/tracker/categories/${id}`, { method: 'DELETE' }),
 
+        getBalance: () => apiFetch('/api/tracker/balance', { method: 'GET' }),
         getSummary: (startDate?: string, endDate?: string) => {
             const q = new URLSearchParams();
             if (startDate) q.set('start_date', startDate);
@@ -143,7 +167,7 @@ export const api = {
             fd.append('file', file);
             return apiUpload('/api/tracker/bills/upload', fd);
         },
-        confirmBill: (uploadId: number, data: {
+        confirmBill: async (uploadId: number, data: {
             amount: number;
             category_name: string;
             merchant?: string;
@@ -152,7 +176,13 @@ export const api = {
             description?: string;
             tags?: string | string[];
             is_subscription?: boolean;
-        }) => apiFetch(`/api/tracker/bills/${uploadId}/confirm`, { method: 'POST', body: JSON.stringify(data) }),
+        }) => {
+            const res = await apiFetch(`/api/tracker/bills/${uploadId}/confirm`, { method: 'POST', body: JSON.stringify(data) });
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('nickel:tracker-updated'));
+            }
+            return res;
+        },
         getBillFileUrl: (uploadId: number) => {
             const token = localStorage.getItem('nickle_token') || '';
             return `${BASE}/api/tracker/bills/${uploadId}/file${token ? `?token=${encodeURIComponent(token)}` : ''}`;

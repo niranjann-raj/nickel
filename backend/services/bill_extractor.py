@@ -190,12 +190,12 @@ def extract_with_gemini(file_bytes: bytes, mime_type: str, ext: str) -> dict:
         contents = [prompt, part]
 
         # Use gemini-2.5-flash or models in fallback
-        preferred_model = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash')
+        preferred_model = os.environ.get('GEMINI_MODEL', 'gemini-flash-lite-latest')
         candidate_models = [
             preferred_model,
+            'gemini-flash-lite-latest',
+            'gemini-3.5-flash-lite',
             'gemini-flash-latest',
-            'gemini-2.0-flash',
-            'gemini-1.5-flash',
         ]
         seen = set()
         models = [m for m in candidate_models if not (m in seen or seen.add(m))]

@@ -43,7 +43,9 @@ def create_app():
     with app.app_context():
         db.create_all()
         
-    start_scheduler(app)
+    # Start background scheduler (prevent duplicate jobs in Flask reload mode)
+    if not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        start_scheduler(app)
 
     return app
 

@@ -1,4 +1,5 @@
-import { Play, Pause, Edit3, Trash2, Calendar, TrendingUp, Zap, Flame } from 'lucide-react';
+import { Play, Pause, Edit3, Trash2, Calendar, TrendingUp, Zap, Flame, Award } from 'lucide-react';
+import { getGoalCompletionCoins } from '../../../utils/goalRewards';
 
 export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRunAutopay }: any) {
     const progress = goal.target_amount > 0 ? (goal.saved_amount / goal.target_amount) * 100 : 0;
@@ -11,6 +12,7 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
     const daysRemaining = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
 
     const isCompleted = goal.status === 'COMPLETED';
+    const rewardCoins = goal.completion_reward_coins || getGoalCompletionCoins(goal.target_amount);
 
     return (
         <div className="relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-lg hover:shadow-shadow-[#222]-500/10 transition-all duration-300 group">
@@ -30,16 +32,21 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
                             </p>
                         </div>
                     </div>
-                    {/* Status Badge */}
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        isCompleted
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : goal.status === 'PAUSED'
-                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            : 'bg-white/10 text-gray-300 border border-white/10'
-                    }`}>
-                        {goal.status}
-                    </span>
+                    {/* Status Badge & Coin Reward */}
+                    <div className="flex flex-col items-end gap-1.5">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            isCompleted
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : goal.status === 'PAUSED'
+                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                : 'bg-white/10 text-gray-300 border border-white/10'
+                        }`}>
+                            {goal.status}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1" title="Gold Coins reward on completion">
+                            🪙 +{rewardCoins.toLocaleString()} {isCompleted ? 'earned' : 'coins'}
+                        </span>
+                    </div>
                 </div>
 
                 {/* Amounts */}
@@ -101,7 +108,7 @@ export default function GoalCard({ goal, onView, onEdit, onPause, onDelete, onRu
                         <button
                             onClick={() => onRunAutopay(goal.id)}
                             className="col-span-1 py-3 rounded-xl bg-[#ffffff] text-[#000000] font-bold hover:bg-[#111] transition-colors shadow-sm shadow-shadow-[#222]-500/20 flex items-center justify-center gap-2"
-                            title="Debits from Expense Tracker Net Cash Flow"
+                            title="Debits from Main Account Balance"
                         >
                             <Zap className="w-4 h-4" /> Run
                         </button>

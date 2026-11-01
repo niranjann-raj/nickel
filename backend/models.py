@@ -41,10 +41,16 @@ class User(db.Model):
         if self.last_save_date and (self.current_streak or 0) > 0:
             days_diff = (today - self.last_save_date).days
             if days_diff > 1:
+                missed_days = days_diff - 1
                 try:
-                    if (self.streak_shields or 0) > 0:
-                        self.streak_shields -= 1
+                    if (self.streak_shields or 0) >= missed_days:
+                        self.streak_shields -= missed_days
                         self.last_save_date = today - timedelta(days=1)
+                        # Notify user that their shield protected their streak
+                        shield_word = f"{missed_days} Streak Shield" if missed_days == 1 else f"{missed_days} Streak Shields"
+                        msg = f"Your {self.current_streak}-day saving streak was protected! Used {shield_word} ({self.streak_shields} remaining)."
+                        notif = Notification(user_id=self.id, title="Streak Shield Activated 🛡️", message=msg, type="reward")
+                        db.session.add(notif)
                         db.session.commit()
                     else:
                         self.current_streak = 0
@@ -169,6 +175,30 @@ class Notification(db.Model):
             'created_at': self.created_at.isoformat()
         }
 
+def calculate_goal_completion_coins(target_amount: float) -> int:
+    """Calculate Gold Coins awarded when a savings goal is successfully completed."""
+    target = float(target_amount or 0.0)
+    if target < 1000:
+        return 25
+    elif target < 2500:
+        return 50
+    elif target < 5000:
+        return 100
+    elif target < 10000:
+        return 200
+    elif target < 25000:
+        return 500
+    elif target < 50000:
+        return 1000
+    elif target < 100000:
+        return 2000
+    elif target < 250000:
+        return 5000
+    elif target < 500000:
+        return 10000
+    else:
+        return 20000
+
 class Goal(db.Model):
     __tablename__ = 'goals'
     id = db.Column(db.Integer, primary_key=True)
@@ -180,6 +210,7 @@ class Goal(db.Model):
     target_date = db.Column(db.Date, nullable=False)
     icon = db.Column(db.String(255), nullable=True) # predefined image or icon name
     status = db.Column(db.String(20), default='ACTIVE') # ACTIVE, COMPLETED, PAUSED
+    reward_awarded = db.Column(db.Boolean, default=False)
     original_completion_date = db.Column(db.Date, nullable=False)
     current_completion_date = db.Column(db.Date, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -194,6 +225,8 @@ class Goal(db.Model):
             'target_date': self.target_date.isoformat() if self.target_date else None,
             'icon': self.icon,
             'status': self.status,
+            'reward_awarded': bool(self.reward_awarded),
+            'completion_reward_coins': calculate_goal_completion_coins(self.target_amount),
             'original_completion_date': self.original_completion_date.isoformat() if self.original_completion_date else None,
             'current_completion_date': self.current_completion_date.isoformat() if self.current_completion_date else None,
             'created_at': self.created_at.isoformat()

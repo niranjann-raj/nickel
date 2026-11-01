@@ -1,6 +1,6 @@
 import MatrixLoader from '../../../components/ui/MatrixLoader';
 import { useState, useEffect, useMemo } from 'react';
-import { X, Receipt, Users, Calculator, AlertCircle, Check, Percent, PieChart, DollarSign } from 'lucide-react';
+import { X, Receipt, Calculator, AlertCircle, Check, PieChart, DollarSign } from 'lucide-react';
 import { api } from '../../api';
 
 interface Member {
@@ -16,6 +16,14 @@ interface Member {
     };
 }
 
+interface SplitPreviewItem {
+    user_id: number;
+    share: number;
+    netOwed: number;
+    label: string;
+    extraText?: string;
+}
+
 interface AddExpenseModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -26,7 +34,7 @@ interface AddExpenseModalProps {
     onExpenseSaved?: (expense: any) => void;
 }
 
-const CATEGORIES = [
+export const CATEGORIES = [
     { name: 'Accommodation', emoji: '🏨' },
     { name: 'Food & Drinks', emoji: '🍽️' },
     { name: 'Transport', emoji: '🚕' },
@@ -59,8 +67,8 @@ export default function AddExpenseModal({
     // Multiple payers: { [userId]: string_amount }
     const [multiplePayers, setMultiplePayers] = useState<Record<number, string>>({});
 
-    // Split method: 'EQUAL' | 'EXACT' | 'PERCENTAGE' | 'SHARES'
-    const [splitMethod, setSplitMethod] = useState<'EQUAL' | 'EXACT' | 'PERCENTAGE' | 'SHARES'>('EQUAL');
+    // Split method: 'EQUAL' | 'EXACT'
+    const [splitMethod, setSplitMethod] = useState<'EQUAL' | 'EXACT'>('EQUAL');
 
     // Selected participants for split: Set of userIds
     const [selectedParticipants, setSelectedParticipants] = useState<Set<number>>(
@@ -121,8 +129,6 @@ export default function AddExpenseModal({
                 editingExpense.shares.forEach((s: any) => {
                     if (editingExpense.split_method === 'EXACT') {
                         cvMap[s.user_id] = String(s.share_amount);
-                    } else if (editingExpense.split_method === 'PERCENTAGE' || editingExpense.split_method === 'SHARES') {
-                        cvMap[s.user_id] = String(s.raw_value !== null ? s.raw_value : s.share_amount);
                     }
                 });
                 setCustomValues(cvMap);
@@ -170,8 +176,10 @@ export default function AddExpenseModal({
     };
 
     // Calculate live split preview
-    const splitPreview = useMemo(() => {
-        const participantIds = Array.from(selectedParticipants);
+    const splitPreview = useMemo<SplitPreviewItem[]>(() => {
+        const participantIds = splitMethod === 'EQUAL'
+            ? members.map(m => m.user_id)
+            : Array.from(selectedParticipants);
         const n = participantIds.length;
         if (n === 0 || parsedAmount <= 0) return [];
 
@@ -181,10 +189,39 @@ export default function AddExpenseModal({
 
             return participantIds.map((uid, idx) => {
                 const shareCents = baseCents + (idx < remainder ? 1 : 0);
+                const grossShare = shareCents / 100;
+
+                // When user selects multiple payers and split equally:
+                // Only show what each person still has to pay after deducting what they already paid!
+                if (payerMode === 'multiple') {
+                    const contributed = parseFloat(multiplePayers[uid] || '0') || 0;
+                    const netOwed = Math.round((grossShare - contributed) * 100) / 100;
+                    if (netOwed > 0) {
+                        return {
+                            user_id: uid,
+                            share: grossShare,
+                            netOwed: netOwed,
+                            label: `${currency} ${netOwed.toFixed(2)}`,
+                            extraText: `has to pay ${currency} ${netOwed.toFixed(2)}`
+                        };
+                    } else {
+                        const extra = Math.round((contributed - grossShare) * 100) / 100;
+                        return {
+                            user_id: uid,
+                            share: grossShare,
+                            netOwed: 0,
+                            label: `${currency} 0.00`,
+                            extraText: extra > 0 ? `Paid ${currency} ${extra.toFixed(2)} extra` : 'Settled'
+                        };
+                    }
+                }
+
                 return {
                     user_id: uid,
-                    share: shareCents / 100,
-                    label: `${currency} ${(shareCents / 100).toFixed(2)}`
+                    share: grossShare,
+                    netOwed: grossShare,
+                    label: `${currency} ${grossShare.toFixed(2)}`,
+                    extraText: ''
                 };
             });
         }
@@ -195,45 +232,17 @@ export default function AddExpenseModal({
                 return {
                     user_id: uid,
                     share: entered,
-                    label: `${currency} ${entered.toFixed(2)}`
+                    netOwed: entered,
+                    label: `${currency} ${entered.toFixed(2)}`,
+                    extraText: ''
                 };
             });
         }
 
-        if (splitMethod === 'PERCENTAGE') {
-            return participantIds.map(uid => {
-                const pct = parseFloat(customValues[uid] || '0') || 0;
-                const calculated = (parsedAmount * pct) / 100;
-                return {
-                    user_id: uid,
-                    share: calculated,
-                    percentage: pct,
-                    label: `${pct}% (${currency} ${calculated.toFixed(2)})`
-                };
-            });
-        }
 
-        if (splitMethod === 'SHARES') {
-            let totalShares = 0;
-            participantIds.forEach(uid => {
-                const s = parseFloat(customValues[uid] || '1') || 1;
-                totalShares += s;
-            });
-
-            return participantIds.map(uid => {
-                const s = parseFloat(customValues[uid] || '1') || 1;
-                const calculated = totalShares > 0 ? (parsedAmount * s) / totalShares : 0;
-                return {
-                    user_id: uid,
-                    share: calculated,
-                    shares: s,
-                    label: `${s} share${s !== 1 ? 's' : ''} (${currency} ${calculated.toFixed(2)})`
-                };
-            });
-        }
 
         return [];
-    }, [selectedParticipants, parsedAmount, splitMethod, customValues, currency]);
+    }, [selectedParticipants, parsedAmount, splitMethod, customValues, currency, payerMode, multiplePayers, members]);
 
     // Validation for custom splits
     const customSplitValidation = useMemo(() => {
@@ -255,36 +264,10 @@ export default function AddExpenseModal({
             }
         }
 
-        if (splitMethod === 'PERCENTAGE') {
-            let totalPct = 0;
-            participantIds.forEach(uid => {
-                totalPct += parseFloat(customValues[uid] || '0') || 0;
-            });
-            const diffPct = Math.round((100 - totalPct) * 10) / 10;
-            if (Math.abs(diffPct) > 0.05) {
-                return {
-                    valid: false,
-                    error: `Percentages must add up to 100%. Current sum: ${totalPct.toFixed(1)}% (remaining: ${diffPct}%)`
-                };
-            }
-        }
 
-        if (splitMethod === 'SHARES') {
-            let totalShares = 0;
-            for (const uid of participantIds) {
-                const s = parseFloat(customValues[uid] || '1');
-                if (isNaN(s) || s <= 0) {
-                    return { valid: false, error: 'All share values must be greater than zero.' };
-                }
-                totalShares += s;
-            }
-            if (totalShares <= 0) {
-                return { valid: false, error: 'Total shares must be greater than zero.' };
-            }
-        }
 
         return { valid: true, error: null };
-    }, [selectedParticipants, parsedAmount, splitMethod, customValues, currency]);
+    }, [selectedParticipants, parsedAmount, splitMethod, customValues, currency, payerMode, multiplePayers, members]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -325,15 +308,13 @@ export default function AddExpenseModal({
             return;
         }
 
-        const participantIds = Array.from(selectedParticipants);
+        const participantIds = splitMethod === 'EQUAL'
+            ? members.map(m => m.user_id)
+            : Array.from(selectedParticipants);
         const participantsPayload = participantIds.map(uid => {
             const item: any = { user_id: uid };
             if (splitMethod === 'EXACT') {
                 item.amount = parseFloat(customValues[uid] || '0') || 0;
-            } else if (splitMethod === 'PERCENTAGE') {
-                item.percentage = parseFloat(customValues[uid] || '0') || 0;
-            } else if (splitMethod === 'SHARES') {
-                item.shares = parseFloat(customValues[uid] || '1') || 1;
             }
             return item;
         });
@@ -504,7 +485,7 @@ export default function AddExpenseModal({
                                     onClick={() => setPayerMode('single')}
                                     className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                                         payerMode === 'single'
-                                            ? 'bg-white text-zinc-950 shadow-sm font-bold'
+                                            ? 'bg-white text-zinc-950 shadow-[0_0_15px_rgba(255,255,255,0.4)] ring-1 ring-white/50 font-bold'
                                             : 'text-gray-400 hover:text-white'
                                     }`}
                                 >
@@ -514,13 +495,14 @@ export default function AddExpenseModal({
                                     type="button"
                                     onClick={() => {
                                         setPayerMode('multiple');
+                                        setSplitMethod('EQUAL');
                                         if (Object.keys(multiplePayers).length === 0 && parsedAmount > 0) {
                                             setMultiplePayers({ [singlePayerId]: String(parsedAmount) });
                                         }
                                     }}
                                     className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                                         payerMode === 'multiple'
-                                            ? 'bg-white text-zinc-950 shadow-sm font-bold'
+                                            ? 'bg-white text-zinc-950 shadow-[0_0_15px_rgba(255,255,255,0.4)] ring-1 ring-white/50 font-bold'
                                             : 'text-gray-400 hover:text-white'
                                     }`}
                                 >
@@ -538,7 +520,7 @@ export default function AddExpenseModal({
                                          onClick={() => setSinglePayerId(m.user_id)}
                                          className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                                              singlePayerId === m.user_id
-                                                 ? 'bg-white text-zinc-950 border-white font-bold shadow-sm'
+                                                 ? 'bg-white text-zinc-950 border-white font-bold shadow-[0_0_20px_rgba(255,255,255,0.4)] ring-1 ring-white/50'
                                                  : 'bg-white dark:bg-[#121215] border-gray-200 dark:border-white/5 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-white/20'
                                          }`}
                                      >
@@ -611,32 +593,24 @@ export default function AddExpenseModal({
                                 <PieChart className="w-4 h-4 text-white" />
                                 Split Method
                             </span>
-                            <div className="flex items-center gap-1">
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedParticipants(new Set(members.map(m => m.user_id)))}
-                                    className="text-[11px] text-zinc-400 hover:text-white hover:underline cursor-pointer"
-                                >
-                                    Select All
-                                </button>
-                            </div>
                         </div>
 
                         {/* Split Method Tabs */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {[
-                                { id: 'EQUAL', label: 'Equally', icon: Calculator },
-                                { id: 'EXACT', label: 'Custom Amount', icon: DollarSign },
-                                { id: 'PERCENTAGE', label: 'By Percentage', icon: Percent },
-                                { id: 'SHARES', label: 'By Shares/Ratio', icon: Users },
-                            ].map(({ id, label, icon: Icon }) => (
+                        <div className={`grid ${payerMode === 'multiple' ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
+                            {(payerMode === 'multiple'
+                                ? [{ id: 'EQUAL', label: 'Equally', icon: Calculator }]
+                                : [
+                                    { id: 'EQUAL', label: 'Equally', icon: Calculator },
+                                    { id: 'EXACT', label: 'Custom Amount', icon: DollarSign },
+                                ]
+                            ).map(({ id, label, icon: Icon }) => (
                                 <button
                                     key={id}
                                     type="button"
                                     onClick={() => setSplitMethod(id as any)}
-                                    className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                    className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                                         splitMethod === id
-                                            ? 'bg-white text-zinc-950 border-white font-bold shadow-sm'
+                                            ? 'bg-white text-zinc-950 border-white font-bold shadow-[0_0_20px_rgba(255,255,255,0.45)] ring-1 ring-white/50'
                                             : 'bg-white dark:bg-[#121215] border-gray-200 dark:border-white/5 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-white/20'
                                     }`}
                                 >
@@ -649,12 +623,14 @@ export default function AddExpenseModal({
                         {/* Participants List */}
                         <div className="space-y-2">
                             <span className="text-xs text-gray-500 dark:text-gray-400 block">
-                                Who shares this expense? ({selectedParticipants.size} selected)
+                                {splitMethod === 'EQUAL'
+                                    ? 'Split equally among all members'
+                                    : `Who shares this expense? (${selectedParticipants.size} selected)`}
                             </span>
 
                             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                                 {members.map((m) => {
-                                    const isSelected = selectedParticipants.has(m.user_id);
+                                    const isSelected = splitMethod === 'EQUAL' ? true : selectedParticipants.has(m.user_id);
                                     return (
                                         <div
                                             key={m.user_id}
@@ -665,18 +641,26 @@ export default function AddExpenseModal({
                                             }`}
                                         >
                                             <div
-                                                onClick={() => toggleParticipant(m.user_id)}
-                                                className="flex items-center gap-3 cursor-pointer flex-1 truncate select-none"
+                                                onClick={() => {
+                                                    if (splitMethod !== 'EQUAL') {
+                                                        toggleParticipant(m.user_id);
+                                                    }
+                                                }}
+                                                className={`flex items-center gap-3 flex-1 truncate select-none ${
+                                                    splitMethod === 'EQUAL' ? 'cursor-default' : 'cursor-pointer'
+                                                }`}
                                             >
-                                                <div
-                                                    className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
-                                                        isSelected
-                                                            ? 'bg-white border-white text-zinc-950 font-bold shadow-sm'
-                                                            : 'border-gray-300 dark:border-white/20'
-                                                    }`}
-                                                >
-                                                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                                                </div>
+                                                {splitMethod !== 'EQUAL' && (
+                                                    <div
+                                                        className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
+                                                            isSelected
+                                                                ? 'bg-white border-white text-zinc-950 font-bold shadow-sm'
+                                                                : 'border-gray-300 dark:border-white/20'
+                                                        }`}
+                                                    >
+                                                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                                    </div>
+                                                )}
                                                 <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 text-xs overflow-hidden">
                                                     {m.user?.avatar ? (
                                                         <img src={m.user.avatar} alt="" className="w-full h-full object-cover" />
@@ -693,9 +677,16 @@ export default function AddExpenseModal({
                                             {isSelected && (
                                                 <div className="flex items-center gap-1.5 ml-2">
                                                     {splitMethod === 'EQUAL' && (
-                                                        <span className="text-xs font-mono font-medium text-gray-500 dark:text-gray-400">
-                                                            {splitPreview.find(p => p.user_id === m.user_id)?.label || '-'}
-                                                        </span>
+                                                        <div className="text-right">
+                                                            <span className="text-xs font-mono font-bold text-gray-900 dark:text-white">
+                                                                {splitPreview.find(p => p.user_id === m.user_id)?.label || '-'}
+                                                            </span>
+                                                            {payerMode === 'multiple' && (
+                                                                <span className="block text-[10px] text-gray-400">
+                                                                    {splitPreview.find(p => p.user_id === m.user_id)?.extraText}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     )}
 
                                                     {splitMethod === 'EXACT' && (
@@ -716,42 +707,7 @@ export default function AddExpenseModal({
                                                         </div>
                                                     )}
 
-                                                    {splitMethod === 'PERCENTAGE' && (
-                                                        <div className="flex items-center gap-1 w-24">
-                                                            <input
-                                                                type="number"
-                                                                step="0.1"
-                                                                min="0"
-                                                                max="100"
-                                                                value={customValues[m.user_id] || ''}
-                                                                onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    setCustomValues(prev => ({ ...prev, [m.user_id]: val }));
-                                                                }}
-                                                                placeholder="0"
-                                                                className="w-full px-2 py-1 rounded-lg bg-gray-50 dark:bg-[#18181c] border border-gray-200 dark:border-white/10 text-xs font-mono font-semibold text-right focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20"
-                                                            />
-                                                            <span className="text-xs text-gray-400">%</span>
-                                                        </div>
-                                                    )}
 
-                                                    {splitMethod === 'SHARES' && (
-                                                        <div className="flex items-center gap-1 w-24">
-                                                            <input
-                                                                type="number"
-                                                                step="1"
-                                                                min="1"
-                                                                value={customValues[m.user_id] || '1'}
-                                                                onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    setCustomValues(prev => ({ ...prev, [m.user_id]: val }));
-                                                                }}
-                                                                placeholder="1"
-                                                                className="w-full px-2 py-1 rounded-lg bg-gray-50 dark:bg-[#18181c] border border-gray-200 dark:border-white/10 text-xs font-mono font-semibold text-right focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20"
-                                                            />
-                                                            <span className="text-xs text-gray-400">pts</span>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -764,7 +720,11 @@ export default function AddExpenseModal({
                         {parsedAmount > 0 && selectedParticipants.size > 0 && (
                             <div className="p-3 rounded-xl bg-[#18181c] border border-white/10 text-xs space-y-1.5">
                                 <div className="flex items-center justify-between font-semibold text-white">
-                                    <span>Live Calculation Preview</span>
+                                    <span>
+                                        {payerMode === 'multiple' && splitMethod === 'EQUAL'
+                                            ? 'Net Amount To Pay (After Deducting Paid Amounts)'
+                                            : 'Live Calculation Preview'}
+                                    </span>
                                     <span>Total: {currency} {parsedAmount.toFixed(2)}</span>
                                 </div>
                                 <div className="flex flex-wrap gap-2 pt-1">
@@ -776,10 +736,20 @@ export default function AddExpenseModal({
                                                 className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] font-mono text-gray-300"
                                             >
                                                 {mem?.user?.full_name?.split(' ')[0]}: <strong className="text-white">{item.label}</strong>
+                                                {item.extraText && (
+                                                    <span className="ml-1 text-[10px] text-gray-400">
+                                                        ({item.extraText})
+                                                    </span>
+                                                )}
                                             </span>
                                         );
                                     })}
                                 </div>
+                                {payerMode === 'multiple' && splitMethod === 'EQUAL' && (
+                                    <p className="text-[11px] text-emerald-400/90 pt-1 font-medium">
+                                        Equal share is {currency} {(parsedAmount / (selectedParticipants.size || 1)).toFixed(2)} each. Members who already covered their share have 0 left to pay.
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>

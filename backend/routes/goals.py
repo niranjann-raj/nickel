@@ -27,18 +27,37 @@ def get_goals():
         progress_sum += min(progress, 100)
     avg_progress = progress_sum / len(active_goals) if active_goals else 0
     
-    # Calculate monthly saving (based on auto savings of active goals)
-    monthly_saving = 0
+    # Calculate actual savings in goals for the current month
+    today = date.today()
+    first_of_month = today.replace(day=1)
+    
+    goal_ids = [g.id for g in goals]
+    monthly_saving = 0.0
+    if goal_ids:
+        month_txs = GoalTransaction.query.filter(
+            GoalTransaction.goal_id.in_(goal_ids),
+            GoalTransaction.created_at >= first_of_month
+        ).all()
+        for tx in month_txs:
+            if (tx.type == 'GOAL_AUTOPAY' and tx.status == 'SUCCESS') or (tx.type == 'CREDIT'):
+                monthly_saving += float(tx.amount or 0.0)
+                
+    if monthly_saving == 0.0 and all(g.created_at.date() >= first_of_month for g in goals if g.created_at):
+        monthly_saving = total_saved
+    monthly_saving = min(monthly_saving, total_saved)
+
+    # Calculate projected monthly commitment from auto-savings of active goals
+    monthly_commitment = 0.0
     auto_savings = GoalAutoSaving.query.join(Goal).filter(Goal.user_id == user_id, Goal.status == 'ACTIVE').all()
     for a_s in auto_savings:
         if a_s.frequency == 'DAILY':
-            monthly_saving += a_s.amount * 30
+            monthly_commitment += a_s.amount * 30
         elif a_s.frequency == 'WEEKLY':
-            monthly_saving += a_s.amount * 4
+            monthly_commitment += a_s.amount * 4
         elif a_s.frequency == 'MONTHLY':
-            monthly_saving += a_s.amount
+            monthly_commitment += a_s.amount
         elif a_s.frequency == 'CUSTOM' and a_s.custom_days and a_s.custom_days > 0:
-            monthly_saving += a_s.amount * (30 / a_s.custom_days)
+            monthly_commitment += a_s.amount * (30 / a_s.custom_days)
 
     goals_data = []
     for g in goals:
@@ -49,8 +68,8 @@ def get_goals():
         g_dict['auto_saving'] = a_s.to_dict() if a_s else None
         goals_data.append(g_dict)
 
-    from scheduler import get_user_net_cash_flow
-    net_cash_flow = get_user_net_cash_flow(user_id)
+    from scheduler import get_user_account_balance
+    account_balance = get_user_account_balance(user_id)
     user = User.query.get(user_id)
 
     return jsonify({
@@ -62,7 +81,9 @@ def get_goals():
             'total_remaining': total_remaining,
             'avg_progress': avg_progress,
             'monthly_saving_rate': monthly_saving,
-            'net_cash_flow': net_cash_flow,
+            'monthly_commitment': monthly_commitment,
+            'account_balance': account_balance,
+            'net_cash_flow': account_balance,
             'current_streak': user.get_active_streak() if user else 0
         }
     }), 200
@@ -103,8 +124,20 @@ def create_goal():
         amount = float(auto_saving_data.get('amount', 0))
         custom_days = auto_saving_data.get('custom_days', None)
         
-        # calculate next run date (tomorrow for daily, etc., keep it simple)
-        next_run = date.today() + timedelta(days=1)
+        # calculate next run date according to frequency
+        if freq == 'DAILY':
+            next_run = date.today() + timedelta(days=1)
+        elif freq == 'WEEKLY':
+            next_run = date.today() + timedelta(days=7)
+        elif freq == 'MONTHLY':
+            next_run = date.today() + timedelta(days=30)
+        elif freq == 'CUSTOM' and custom_days:
+            try:
+                next_run = date.today() + timedelta(days=int(custom_days))
+            except (ValueError, TypeError):
+                next_run = date.today() + timedelta(days=1)
+        else:
+            next_run = date.today() + timedelta(days=1)
         
         auto_saving = GoalAutoSaving(
             goal_id=goal.id,
@@ -167,6 +200,22 @@ def edit_goal(goal_id):
     if 'target_amount' in data:
         try:
             goal.target_amount = float(data['target_amount'])
+            if goal.saved_amount >= goal.target_amount and goal.status != 'COMPLETED' and not getattr(goal, 'reward_awarded', False):
+                goal.status = 'COMPLETED'
+                goal.current_completion_date = date.today()
+                from models import calculate_goal_completion_coins, Notification
+                completion_coins = calculate_goal_completion_coins(goal.target_amount)
+                user = User.query.get(user_id)
+                if user:
+                    user.coins += completion_coins
+                goal.reward_awarded = True
+                notif = Notification(
+                    user_id=user_id,
+                    title="Goal Completed! 🏆",
+                    message=f"Congratulations! You completed your goal '{goal.name}' (Target: ₹{goal.target_amount:,.2f}) and earned {completion_coins:,} Gold Coins!",
+                    type="reward"
+                )
+                db.session.add(notif)
         except ValueError:
             pass
     if 'description' in data:
@@ -252,10 +301,25 @@ def purchase_decision(goal_id):
         
     if decision == 'SKIP':
         goal.saved_amount += purchase_amount
+        completion_coins = 0
         
-        if goal.saved_amount >= goal.target_amount:
+        if goal.saved_amount >= goal.target_amount and goal.status != 'COMPLETED':
             goal.status = 'COMPLETED'
             goal.current_completion_date = date.today()
+            if not getattr(goal, 'reward_awarded', False):
+                from models import calculate_goal_completion_coins, Notification
+                completion_coins = calculate_goal_completion_coins(goal.target_amount)
+                user = User.query.get(user_id)
+                if user:
+                    user.coins += completion_coins
+                goal.reward_awarded = True
+                notif = Notification(
+                    user_id=user_id,
+                    title="Goal Completed! 🏆",
+                    message=f"Congratulations! You completed your goal '{goal.name}' (Target: ₹{goal.target_amount:,.2f}) and earned {completion_coins:,} Gold Coins!",
+                    type="reward"
+                )
+                db.session.add(notif)
         else:
             auto_saving = GoalAutoSaving.query.filter_by(goal_id=goal.id).first()
             if auto_saving:
@@ -318,14 +382,16 @@ def purchase_decision(goal_id):
         'goal': goal.to_dict()
     }), 200
 
+@goals_bp.route('/account-balance', methods=['GET'])
 @goals_bp.route('/net-cash-flow', methods=['GET'])
 @jwt_required()
 def get_goal_net_cash_flow():
     user_id = get_jwt_identity()
-    from scheduler import get_user_net_cash_flow
-    net_cash_flow = get_user_net_cash_flow(user_id)
+    from scheduler import get_user_account_balance
+    account_balance = get_user_account_balance(user_id)
     return jsonify({
-        'net_cash_flow': net_cash_flow
+        'account_balance': account_balance,
+        'net_cash_flow': account_balance
     }), 200
 
 @goals_bp.route('/<int:goal_id>/autopay/run', methods=['POST'])

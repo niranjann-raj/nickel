@@ -1,7 +1,7 @@
 import MatrixLoader from '../../components/ui/MatrixLoader';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Target, Plus, TrendingUp, CheckCircle, PiggyBank, Calendar, AlertTriangle, Play, Pause, Edit3, Trash2, Search, X, CheckCircle2, ArrowRight, Flame } from 'lucide-react';
+import { Target, Plus, TrendingUp, CheckCircle, PiggyBank, Calendar, AlertTriangle, Play, Pause, Edit3, Trash2, Search, X, CheckCircle2, ArrowRight } from 'lucide-react';
 import { api } from '../api';
 import { useDashboard } from '../DashboardLayout';
 import GoalCard from '../components/goals/GoalCard';
@@ -75,7 +75,7 @@ export default function GoalsPage() {
         try {
             const data = await api.goals.runAutopay(goalId);
             if (data.status === 'FAILED' || (data.transaction && data.transaction.status === 'FAILED')) {
-                const failReason = data.message || data.error || data.transaction?.reason || 'Insufficient Net Cash Flow';
+                const failReason = data.message || data.error || data.transaction?.reason || 'Insufficient Main Account Balance';
                 setNotification({
                     type: 'error',
                     title: 'AutoPay Debit Failed',
@@ -87,7 +87,7 @@ export default function GoalsPage() {
                 setNotification({
                     type: 'success',
                     title: 'AutoPay Debited Successfully',
-                    message: data.message || `Debited ₹${amt} from Expense Tracker Net Cash Flow for '${goalName}'. Logged in Expense Tracker transactions.`
+                    message: data.message || `Debited ₹${amt} from Main Account Balance for '${goalName}'. Logged in Expense Tracker transactions.`
                 });
             }
             await fetchGoals();
@@ -95,8 +95,8 @@ export default function GoalsPage() {
         } catch (error: any) {
             setNotification({
                 type: 'error',
-                title: 'Insufficient Net Cash Flow',
-                message: error.message || 'AutoPay failed: Insufficient balance in Expense Tracker Net Cash Flow.'
+                title: 'Insufficient Main Account Balance',
+                message: error.message || 'AutoPay failed: Insufficient balance in Main Account Balance.'
             });
             await fetchGoals();
             refreshUser();
@@ -196,7 +196,7 @@ export default function GoalsPage() {
                                     to="/tracker"
                                     className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 mt-2 hover:underline"
                                 >
-                                    <span>Check Expense Tracker Net Cash Flow</span>
+                                    <span>Check Main Account Balance</span>
                                     <ArrowRight className="w-3.5 h-3.5" />
                                 </Link>
                             )}
@@ -213,7 +213,7 @@ export default function GoalsPage() {
 
             {/* Summary Cards */}
             {summary && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-[#1a1a1a] dark:bg-[#111] text-gray-300 flex items-center justify-center">
                             <Target className="w-6 h-6" />
@@ -248,42 +248,6 @@ export default function GoalsPage() {
                         <div>
                             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Monthly Saving</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">₹{summary.monthly_saving_rate.toLocaleString()}</p>
-                        </div>
-                    </div>
-
-                    {/* 5. Net Cash Flow (Linked Funding Source) */}
-                    <Link
-                        to="/tracker"
-                        className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4 hover:border-emerald-500/40 transition-colors group cursor-pointer"
-                        title="Funding source for Goal AutoPay - Click to view in Expense Tracker"
-                    >
-                        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                            <TrendingUp className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-1.5">
-                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Net Cash Flow</p>
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400">Linked</span>
-                            </div>
-                            <p className={`text-xl font-bold tracking-tight ${(summary.net_cash_flow ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                ₹{(summary.net_cash_flow ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </p>
-                        </div>
-                    </Link>
-
-                    {/* 6. Daily Saving Streak */}
-                    <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center">
-                            <Flame className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-1.5">
-                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Daily Streak</p>
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400">+50 XP</span>
-                            </div>
-                            <p className="text-xl font-bold tracking-tight text-orange-400">
-                                {summary.current_streak ?? 0} {(summary.current_streak ?? 0) === 1 ? 'day' : 'days'}
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -422,7 +386,7 @@ export default function GoalsPage() {
                                             cursor={{ fill: 'transparent' }}
                                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                         />
-                                        <Bar dataKey="Saved" stackId="a" fill="#6366f1" radius={[0, 0, 4, 4]} />
+                                        <Bar dataKey="Saved" stackId="a" fill="#71717a" radius={[0, 0, 4, 4]} />
                                         <Bar dataKey="Remaining" stackId="a" fill="#e5e7eb" radius={[4, 4, 0, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
