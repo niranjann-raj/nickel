@@ -42,15 +42,13 @@ def create_app():
     # Create tables
     with app.app_context():
         db.create_all()
-        
-    # Start background scheduler (prevent duplicate jobs in Flask reload mode)
-    if not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        start_scheduler(app)
 
     return app
 
 
 if __name__ == '__main__':
     app = create_app()
+    # Start background scheduler
+    start_scheduler(app)
     print(">>> Nickel backend running on http://localhost:5000")
-    app.run(debug=True, port=5000)
+    app.run(host='127.0.0.1', port=5000, debug=False, threaded=True)

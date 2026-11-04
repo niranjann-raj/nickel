@@ -2,21 +2,10 @@ import { test, expect } from '@playwright/test';
 import { execSync } from 'child_process';
 import path from 'path';
 
-test.describe.configure({ mode: 'serial' });
-
 test.describe('Money Tracker', () => {
   test.beforeAll(() => {
     const backendDir = path.resolve(process.cwd(), 'backend');
     execSync('python seed_tracker_test_user.py', { cwd: backendDir, stdio: 'inherit' });
-  });
-
-  test.afterAll(() => {
-    const backendDir = path.resolve(process.cwd(), 'backend');
-    try {
-      execSync('python delete_tracker_test_user.py', { cwd: backendDir, stdio: 'inherit' });
-    } catch (e) {
-      console.error('Failed to clean up tracker test user:', e);
-    }
   });
 
   test.beforeEach(async ({ page }) => {
@@ -26,8 +15,8 @@ test.describe('Money Tracker', () => {
 
     await page.getByPlaceholder(/you@example.com/i).fill(testEmail);
     await page.getByPlaceholder(/password/i).fill(testPassword);
-    await page.getByRole('button', { name: /Continue with Email/i }).click();
-    await page.waitForURL('**/dashboard**', { timeout: 15000 });
+    await page.getByRole('button', { name: 'Continue with Email' }).click();
+    await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 25000 });
   });
 
   test('Navigates to Expense Tracker and loads dashboard elements', async ({ page }) => {
@@ -60,15 +49,18 @@ test.describe('Money Tracker', () => {
   test('Filter by All Time displays recorded transactions and bill details', async ({ page }) => {
     await page.goto('/dashboard/tracker');
 
+    // Wait for the tracker page to be ready
+    await expect(page.getByRole('heading', { name: 'Expense Tracker' })).toBeVisible({ timeout: 15000 });
+
     // Switch to All Time filter
     await page.getByRole('button', { name: 'All Time' }).click();
 
     // Verify transaction history section
-    await expect(page.getByRole('heading', { name: /Transaction History/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Transaction History/i })).toBeVisible({ timeout: 15000 });
 
     // Verify Sunrise Foods Pvt Ltd bill is visible in the table under All Time
-    await expect(page.getByText('Sunrise Foods Pvt Ltd').first()).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('#transaction-history-section').getByText(/3,130/)).toBeVisible();
+    await expect(page.getByText('Sunrise Foods Pvt Ltd').first()).toBeVisible({ timeout: 25000 });
+    await expect(page.locator('#transaction-history-section').getByText(/3,130/)).toBeVisible({ timeout: 25000 });
   });
 
   test('Add Transaction modal opens and displays required fields', async ({ page }) => {

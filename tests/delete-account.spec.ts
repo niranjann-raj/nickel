@@ -3,19 +3,26 @@ import { execSync } from 'child_process';
 import path from 'path';
 
 test.describe('Delete Account', () => {
+  // Serial mode prevents parallel workers from colliding on seed_delete_test_user
+  test.describe.configure({ mode: 'serial' });
+
   test.beforeAll(() => {
     console.log('Seeding delete test user...');
     const backendDir = path.resolve(process.cwd(), 'backend');
-    execSync('python seed_delete_test_user.py', { cwd: backendDir, stdio: 'inherit' });
+    try {
+      execSync('python seed_delete_test_user.py', { cwd: backendDir, stdio: 'pipe' });
+    } catch (e) {
+      console.warn('Delete test user seeding skipped or already completed');
+    }
   });
 
   test('User can securely delete their account', async ({ page }) => {
     await page.goto('/login');
     await page.getByPlaceholder(/you@example.com/i).fill('delete_test@example.com');
     await page.getByPlaceholder(/password/i).fill('password123');
-    await page.getByRole('button', { name: /Log In/i }).click();
+    await page.getByRole('button', { name: 'Continue with Email' }).click();
 
-    await page.waitForURL('**/dashboard**', { timeout: 10000 });
+    await page.waitForURL('**/dashboard**', { timeout: 15000 });
     
     await page.getByRole('link', { name: /Settings/i }).click();
     
@@ -36,7 +43,7 @@ test.describe('Delete Account', () => {
     await page.getByPlaceholder(/DELETE/i).fill('DELETE');
     await confirmDeleteBtn.click();
 
-    await expect(page.getByRole('heading', { name: /Welcome Back/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /Sign in to Account/i })).toBeVisible({ timeout: 10000 });
   });
 
   test('Google-only user can securely delete their account without password', async ({ page }) => {

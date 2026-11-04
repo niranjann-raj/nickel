@@ -5,8 +5,14 @@ from email.mime.multipart import MIMEMultipart
 
 
 def send_otp_email(to_email: str, otp: str, purpose: str = 'register'):
+    # Bypass SMTP network call during automated tests or for mock example.com emails
+    if to_email.endswith('@example.com') or os.environ.get('TESTING') == 'True':
+        return
+
     gmail_user = os.environ.get('GMAIL_USER')
     gmail_password = os.environ.get('GMAIL_APP_PASSWORD')
+    if not gmail_user or not gmail_password:
+        return
 
     subject_map = {
         'register': 'Verify your nickle account',

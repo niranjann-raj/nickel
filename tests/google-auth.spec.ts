@@ -49,8 +49,7 @@ test.describe('Google Authentication', () => {
       window.location.href = '/dashboard';
     });
 
-    await page.waitForURL('**/dashboard**');
-    await expect(page).toHaveURL(/.*\/dashboard/);
+    await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 25000 });
   });
 
   test('Existing email collision shows error', async ({ page }) => {

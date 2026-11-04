@@ -54,3 +54,5 @@ uploads/
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+README.md

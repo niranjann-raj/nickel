@@ -366,6 +366,15 @@ def delete_account():
         TrackerSubscription.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         CategoryBudget.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         
+        from models import SplitExpenseShare, SplitExpensePayer, SplitSettlementPayment, SplitMember, SplitActivity
+        SplitExpenseShare.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        SplitExpensePayer.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        SplitSettlementPayment.query.filter(
+            (SplitSettlementPayment.payer_id == user.id) | (SplitSettlementPayment.recipient_id == user.id)
+        ).delete(synchronize_session=False)
+        SplitMember.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        SplitActivity.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        
         OtpToken.query.filter_by(email=user_email).delete(synchronize_session=False)
         
         db.session.delete(user)
