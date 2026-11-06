@@ -15,8 +15,8 @@ export default function CoinsWalletCard() {
         <div className="bg-white dark:bg-gray-900 rounded-[24px] p-6 border border-gray-100 dark:border-gray-800 card-glow">
             <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl flex items-center justify-center">
-                        <Coins className="w-6 h-6 text-yellow-500" />
+                    <div className="w-11 h-11 bg-[#1a1a1a] dark:bg-[#111] rounded-2xl flex items-center justify-center">
+                        <Coins className="w-6 h-6 text-gray-300" />
                     </div>
                     <div>
                         <h3 className="font-heading font-bold text-lg text-gray-900 dark:text-white">Coins Wallet</h3>
@@ -24,7 +24,7 @@ export default function CoinsWalletCard() {
                     </div>
                 </div>
                 <div className="text-right">
-                    <p className="font-heading font-black text-4xl text-yellow-500">{coins.toLocaleString()}</p>
+                    <p className="font-heading font-black text-4xl text-gray-300">{coins.toLocaleString()}</p>
                     <p className="text-xs text-gray-400">coins</p>
                 </div>
             </div>
@@ -35,8 +35,8 @@ export default function CoinsWalletCard() {
                     return (
                         <div key={label} className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
-                                    <Icon className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                                <div className="w-9 h-9 bg-[#111] dark:bg-[#111] rounded-xl flex items-center justify-center">
+                                    <Icon className="w-5 h-5 text-gray-400 dark:text-white" />
                                 </div>
                                 <div>
                                     <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{label}</p>
@@ -46,7 +46,7 @@ export default function CoinsWalletCard() {
                             <button
                                 disabled={!canRedeem}
                                 className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${canRedeem
-                                        ? 'gradient-bg text-white hover:shadow-md hover:scale-105'
+                                        ? 'bg-[#ffffff] text-[#000000] hover:shadow-md hover:scale-105'
                                         : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
                                     }`}
                             >

@@ -7,8 +7,15 @@ from flask import Blueprint, request, jsonify
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
-from models import db, User, OtpToken
+from models import (
+    db, User, OtpToken, DailySpin, QuizAttempt, Notification, Goal, 
+    GoalAutoSaving, GoalTransaction, GoalDelayHistory,
+    TrackerTransaction, BillUpload, TrackerCategory, TrackerSubscription, CategoryBudget
+)
 from utils.email import send_otp_email
+from utils.security import hash_password, verify_password
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 auth_bp = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
@@ -36,50 +43,23 @@ def store_otp(email: str, purpose: str) -> str:
     return otp
 
 
-@auth_bp.route('/register', methods=['POST'])
-def register():
+@auth_bp.route('/send-otp', methods=['POST'])
+def send_otp():
     data = request.get_json()
-    full_name = (data.get('full_name') or '').strip()
     email = (data.get('email') or '').strip().lower()
-    password = data.get('password') or ''
-
-    if not full_name:
-        return jsonify({'error': 'Full name is required.'}), 400
     if not EMAIL_REGEX.match(email):
         return jsonify({'error': 'Invalid email address.'}), 400
-    if len(password) < 6:
-        return jsonify({'error': 'Password must be at least 6 characters.'}), 400
-
-    if User.query.filter_by(email=email).first():
+    
+    user = User.query.filter_by(email=email).first()
+    if user and user.is_verified:
         return jsonify({'error': 'An account with this email already exists.'}), 409
 
-    pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-    user = User(full_name=full_name, email=email, password_hash=pw_hash)
-    db.session.add(user)
-    db.session.commit()
-
-    otp = store_otp(email, 'register')
-    try:
-        send_otp_email(email, otp, 'register')
-    except Exception as e:
-        return jsonify({'error': f'Failed to send OTP email: {str(e)}'}), 500
-
-    return jsonify({'message': 'OTP sent to your email.'}), 201
-
-
-@auth_bp.route('/resend-otp', methods=['POST'])
-def resend_otp():
-    data = request.get_json()
-    email = (data.get('email') or '').strip().lower()
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({'error': 'No account with that email.'}), 404
     otp = store_otp(email, 'register')
     try:
         send_otp_email(email, otp, 'register')
     except Exception as e:
         return jsonify({'error': f'Failed to send OTP: {str(e)}'}), 500
-    return jsonify({'message': 'OTP resent.'}), 200
+    return jsonify({'message': 'OTP sent.'}), 200
 
 
 @auth_bp.route('/verify-otp', methods=['POST'])
@@ -87,7 +67,7 @@ def verify_otp():
     data = request.get_json()
     email = (data.get('email') or '').strip().lower()
     otp_code = str(data.get('otp') or '').strip()
-    mode = data.get('mode', 'register')  # 'register' | 'reset'
+    mode = data.get('mode', 'register')
 
     purpose = 'register' if mode == 'register' else 'reset'
     record = OtpToken.query.filter_by(email=email, otp_code=otp_code, purpose=purpose, used=False).first()
@@ -102,22 +82,99 @@ def verify_otp():
     if now > expires:
         record.used = True
         db.session.commit()
-        return jsonify({'error': 'OTP has expired. Please request a new one.'}), 400
+        return jsonify({'error': 'OTP has expired.'}), 400
 
     record.used = True
     db.session.commit()
-
-    if mode == 'register':
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            return jsonify({'error': 'Account not found.'}), 404
-        user.is_verified = True
-        db.session.commit()
-        token = create_access_token(identity=str(user.id))
-        return jsonify({'token': token, 'user': user.to_dict()}), 200
-
-    # For reset mode, just confirm OTP is valid, frontend moves to reset-password
     return jsonify({'message': 'OTP verified.'}), 200
+
+
+@auth_bp.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    full_name = (data.get('full_name') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
+    otp = str(data.get('otp') or '').strip()
+
+    if not full_name or not EMAIL_REGEX.match(email) or len(password) < 6:
+        return jsonify({'error': 'Invalid input data.'}), 400
+
+    # Verify that this email actually had a valid OTP marked as used recently
+    record = OtpToken.query.filter_by(email=email, otp_code=otp, purpose='register', used=True).order_by(OtpToken.created_at.desc()).first()
+    if not record:
+        return jsonify({'error': 'Email not verified. Please verify your email first.'}), 403
+
+    user = User.query.filter_by(email=email).first()
+    if user:
+        if user.is_verified:
+            return jsonify({'error': 'An account with this email already exists.'}), 409
+        else:
+            user.full_name = full_name
+            user.password_hash = hash_password(password)
+            user.is_verified = True
+    else:
+        pw_hash = hash_password(password)
+        user = User(full_name=full_name, email=email, password_hash=pw_hash, is_verified=True)
+        db.session.add(user)
+    
+    db.session.commit()
+    
+    token = create_access_token(identity=str(user.id))
+    return jsonify({'token': token, 'user': user.to_dict()}), 201
+
+
+@auth_bp.route('/google', methods=['POST'])
+def google_auth():
+    data = request.get_json()
+    token = data.get('credential')
+    if not token:
+        return jsonify({'error': 'Missing credential'}), 400
+
+    client_id = os.environ.get('GOOGLE_CLIENT_ID')
+    if not client_id:
+        return jsonify({'error': 'Google Sign-In is not configured on the server.'}), 500
+
+    try:
+        idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), client_id)
+        
+        email = idinfo.get('email')
+        name = idinfo.get('name')
+        sub = idinfo.get('sub')
+
+        if not email or not sub:
+            return jsonify({'error': 'Invalid token payload'}), 400
+            
+        # Check by google_id
+        user = User.query.filter_by(google_id=sub).first()
+        
+        if user:
+            access_token = create_access_token(identity=str(user.id))
+            return jsonify({'token': access_token, 'user': user.to_dict()}), 200
+            
+        # Check by email
+        email_user = User.query.filter_by(email=email).first()
+        if email_user:
+            return jsonify({'error': 'An account with this email already exists. Please log in with your password.'}), 409
+            
+        # Create new user
+        new_user = User(
+            full_name=name or 'Google User',
+            email=email,
+            password_hash='!GOOGLE_AUTH_NO_PASSWORD!',
+            google_id=sub,
+            is_verified=True
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        
+        access_token = create_access_token(identity=str(new_user.id))
+        return jsonify({'token': access_token, 'user': new_user.to_dict()}), 201
+
+    except ValueError:
+        return jsonify({'error': 'Invalid Google token'}), 401
+    except Exception as e:
+        return jsonify({'error': f'Authentication failed: {str(e)}'}), 500
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -130,8 +187,22 @@ def login():
         return jsonify({'error': 'Email and password are required.'}), 400
 
     user = User.query.filter_by(email=email).first()
-    if not user or not bcrypt.check_password_hash(user.password_hash, password):
+    if not user:
         return jsonify({'error': 'Incorrect email or password.'}), 401
+
+    if user.password_hash == '!GOOGLE_AUTH_NO_PASSWORD!':
+        return jsonify({'error': 'Please log in with Google.'}), 401
+    elif user.password_hash.startswith('$2b$'):
+        # Legacy bcrypt hash - verify and migrate
+        if not bcrypt.check_password_hash(user.password_hash, password):
+            return jsonify({'error': 'Incorrect email or password.'}), 401
+        
+        user.password_hash = hash_password(password)
+        db.session.commit()
+    else:
+        # Argon2id hash
+        if not verify_password(password, user.password_hash):
+            return jsonify({'error': 'Incorrect email or password.'}), 401
 
     if not user.is_verified:
         return jsonify({'error': 'Please verify your email before logging in.'}), 403
@@ -185,7 +256,7 @@ def reset_password():
     if not user:
         return jsonify({'error': 'Account not found.'}), 404
 
-    user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    user.password_hash = hash_password(new_password)
     db.session.commit()
 
     return jsonify({'message': 'Password updated successfully.'}), 200
@@ -240,11 +311,75 @@ def change_password():
     current_password = data.get('current_password', '')
     new_password = data.get('new_password', '')
 
-    if not bcrypt.check_password_hash(user.password_hash, current_password):
-        return jsonify({'error': 'Current password is incorrect.'}), 401
+    if user.password_hash.startswith('$2b$'):
+        if not bcrypt.check_password_hash(user.password_hash, current_password):
+            return jsonify({'error': 'Current password is incorrect.'}), 401
+    else:
+        if not verify_password(current_password, user.password_hash):
+            return jsonify({'error': 'Current password is incorrect.'}), 401
+            
     if len(new_password) < 8:
         return jsonify({'error': 'New password must be at least 8 characters.'}), 400
 
-    user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    user.password_hash = hash_password(new_password)
     db.session.commit()
     return jsonify({'message': 'Password changed successfully.'}), 200
+
+@auth_bp.route('/delete-account', methods=['DELETE'])
+@jwt_required()
+def delete_account():
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if not user:
+        return jsonify({'error': 'User not found.'}), 404
+
+    data = request.get_json()
+    password = data.get('password', '')
+
+    if user.password_hash == '!GOOGLE_AUTH_NO_PASSWORD!':
+        pass # Skip password verification for Google-only users
+    elif user.password_hash.startswith('$2b$'):
+        if not bcrypt.check_password_hash(user.password_hash, password):
+            return jsonify({'error': 'Incorrect password.'}), 401
+    else:
+        if not verify_password(password, user.password_hash):
+            return jsonify({'error': 'Incorrect password.'}), 401
+
+    try:
+        user_email = user.email
+        user_goals = Goal.query.filter_by(user_id=user.id).all()
+        goal_ids = [g.id for g in user_goals]
+
+        if goal_ids:
+            GoalAutoSaving.query.filter(GoalAutoSaving.goal_id.in_(goal_ids)).delete(synchronize_session=False)
+            GoalTransaction.query.filter(GoalTransaction.goal_id.in_(goal_ids)).delete(synchronize_session=False)
+            GoalDelayHistory.query.filter(GoalDelayHistory.goal_id.in_(goal_ids)).delete(synchronize_session=False)
+
+        Goal.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        DailySpin.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        QuizAttempt.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        Notification.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+
+        TrackerTransaction.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        BillUpload.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        TrackerCategory.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        TrackerSubscription.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        CategoryBudget.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        
+        from models import SplitExpenseShare, SplitExpensePayer, SplitSettlementPayment, SplitMember, SplitActivity
+        SplitExpenseShare.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        SplitExpensePayer.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        SplitSettlementPayment.query.filter(
+            (SplitSettlementPayment.payer_id == user.id) | (SplitSettlementPayment.recipient_id == user.id)
+        ).delete(synchronize_session=False)
+        SplitMember.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        SplitActivity.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        
+        OtpToken.query.filter_by(email=user_email).delete(synchronize_session=False)
+        
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'message': 'Account and all associated data permanently deleted.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'An error occurred during account deletion. Transaction rolled back.'}), 500

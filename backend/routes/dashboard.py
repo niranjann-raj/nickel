@@ -7,7 +7,7 @@ from datetime import datetime, timezone, date, timedelta
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from models import db, User, Saving, Quiz, QuizAttempt, xp_for_level, GlobalState, Notification
+from models import db, User, Quiz, QuizAttempt, xp_for_level, GlobalState, Notification, Goal
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -72,6 +72,17 @@ def total_xp_for_level(level: int) -> int:
     if n <= 0: return 0
     return (n * (2000 + (n - 1) * 500)) // 2
 
+def coins_for_level_up(level: int) -> int:
+    """Calculate Gold Coins reward awarded when reaching a new level:
+    - Levels 1 – 10:  +25 Gold Coins
+    - Levels 11 – 20: +50 Gold Coins
+    - Levels 21 – 30: +75 Gold Coins
+    - Levels 31 – 40: +100 Gold Coins
+    - Tiers above 40 continue at +25 coins per 10 levels.
+    """
+    tier = max(0, (level - 1) // 10)
+    return 25 + (tier * 25)
+
 def level_up(user: User):
     """Check and apply level-up(s) based on cumulative lifetime XP."""
     while True:
@@ -80,9 +91,18 @@ def level_up(user: User):
             user.level += 1
             
             # Award Gold Coins based on new level tier
-            # Level 1-10 -> 10, 11-20 -> 15, 21-30 -> 20, etc.
-            coins_reward = 10 + ((user.level - 1) // 10) * 5
+            coins_reward = coins_for_level_up(user.level)
             user.coins += coins_reward
+            try:
+                notif = Notification(
+                    user_id=user.id,
+                    title=f"Level Up! Level {user.level} 🎖️",
+                    message=f"Congratulations! You reached Level {user.level} and earned {coins_reward} Gold Coins!",
+                    type="reward"
+                )
+                db.session.add(notif)
+            except Exception:
+                pass
         else:
             break
 
@@ -107,13 +127,51 @@ def streak():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'User not found'}), 404
-    next_checkpoint = next((c for c in [7, 14, 21, 30, 50] if c > user.current_streak), None)
+
+    active_streak = user.get_active_streak()
+    next_checkpoint = next((c for c in [7, 14, 21, 30, 50] if c > active_streak), None)
     return jsonify({
-        'current_streak': user.current_streak,
+        'current_streak': active_streak,
         'last_save_date': str(user.last_save_date) if user.last_save_date else None,
         'xp_per_day': 50,
         'next_checkpoint': next_checkpoint,
     }), 200
+
+
+def generate_with_gemini(client, contents, config=None) -> str:
+    """
+    Generates content using Gemini. Starts with the configured model
+    (defaults to gemini-flash-lite-latest), and automatically falls back to reliable
+    flash models if high demand (503) or discontinued model (404) errors occur.
+    """
+    preferred_model = os.environ.get('GEMINI_MODEL', 'gemini-flash-lite-latest')
+    candidate_models = [
+        preferred_model,
+        'gemini-flash-lite-latest',
+        'gemini-3.5-flash-lite',
+        'gemini-3.6-flash',
+        'gemini-flash-latest',
+        'gemini-3.1-flash-lite',
+    ]
+    seen = set()
+    models = [m for m in candidate_models if not (m in seen or seen.add(m))]
+
+    last_error = None
+    for model_name in models:
+        try:
+            kwargs = {'model': model_name, 'contents': contents}
+            if config:
+                kwargs['config'] = config
+            response = client.models.generate_content(**kwargs)
+            if response and response.text:
+                return response.text
+        except Exception as e:
+            last_error = e
+            logging.warning(f"Gemini generation with {model_name} failed: {e}. Attempting fallback...")
+
+    if last_error:
+        raise last_error
+    raise RuntimeError("No response from any Gemini model.")
 
 
 def generate_ai_quiz_questions() -> list:
@@ -137,11 +195,7 @@ def generate_ai_quiz_questions() -> list:
             "Ensure questions are practical, accurate, and unique."
         )
         
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt
-        )
-        text = response.text.strip()
+        text = generate_with_gemini(client, prompt).strip()
         
         # Strip markdown code fences if present
         if text.startswith("```json"):
@@ -259,6 +313,12 @@ def submit_quiz():
     else:
         coins = 0
 
+    # XP rewards: 20 XP per correct question
+    xp_earned = score * 20
+    user.xp += xp_earned
+    user.lifetime_xp += xp_earned
+    level_up(user)
+
     user.coins += coins
     db.session.add(QuizAttempt(user_id=user.id, score=score, coins_earned=coins))
     db.session.commit()
@@ -267,6 +327,7 @@ def submit_quiz():
         'score': score,
         'total': total,
         'coins_earned': coins,
+        'xp_earned': xp_earned,
         'user': user.to_dict(),
         'results': [
             {
@@ -284,7 +345,19 @@ def submit_quiz():
 @jwt_required()
 def leaderboard():
     user = get_current_user()
-    top_users = User.query.filter_by(is_verified=True).order_by(User.xp.desc()).limit(100).all()
+    timeframe = request.args.get('timeframe', 'season').lower()
+
+    if timeframe == 'all_time':
+        order_col = User.lifetime_xp.desc()
+    else:
+        order_col = User.xp.desc()
+
+    top_users = User.query.filter(
+        User.is_verified == True,
+        ~User.email.ilike('%test@example.com'),
+        ~User.email.ilike('%@nickel.local'),
+        ~User.full_name.ilike('%Test User%')
+    ).order_by(order_col).limit(100).all()
 
     def rank_coins(rank):
         if rank == 1: return 5000
@@ -299,7 +372,9 @@ def leaderboard():
         {
             'rank': i + 1,
             'name': u.full_name,
-            'xp': u.xp,   # display ONLY Season XP
+            'xp': u.lifetime_xp if timeframe == 'all_time' else u.xp,
+            'season_xp': u.xp,
+            'lifetime_xp': u.lifetime_xp,
             'level': u.level,
             'coins': u.coins,
             'rank_coins': rank_coins(i + 1),
@@ -311,12 +386,26 @@ def leaderboard():
     # Find current user's rank if not in top 100
     user_rank = next((e['rank'] for e in board if e['is_current_user']), None)
     if user_rank is None:
-        count = User.query.filter(User.xp > user.xp, User.is_verified == True).count()
+        user_val = user.lifetime_xp if timeframe == 'all_time' else user.xp
+        col = User.lifetime_xp if timeframe == 'all_time' else User.xp
+        count = User.query.filter(
+            col > user_val, 
+            User.is_verified == True,
+            ~User.email.ilike('%test@example.com'),
+        ~User.email.ilike('%@nickel.local'),
+            ~User.full_name.ilike('%Test User%')
+        ).count()
         user_rank = count + 1
+
     season_state = GlobalState.query.filter_by(key='current_season_number').first()
     season = int(season_state.value) if season_state else 1
 
-    return jsonify({'leaderboard': board, 'your_rank': user_rank, 'season': season}), 200
+    return jsonify({
+        'leaderboard': board,
+        'your_rank': user_rank,
+        'season': season,
+        'timeframe': timeframe
+    }), 200
 
 
 @dashboard_bp.route('/coins', methods=['GET'])
@@ -442,28 +531,31 @@ def chat():
         return jsonify({'error': 'AI service is not configured'}), 503
 
     try:
-        import google.genai as genai
+        from google import genai
         from google.genai import types
 
         client = genai.Client(api_key=api_key)
+        
+        # Gather enriched context
+        from utils.ai_context import build_nickel_context
+        nickel_context = build_nickel_context(user.id)
 
-        system_prompt = f"""You are Nickel AI, a friendly and knowledgeable personal finance advisor embedded in the Nickel FinTech app.
+        system_prompt = f"""You are Nickel AI, the personal financial coach inside Nickel.
 
-Here is the current user's profile:
-- Name: {user.email.split('@')[0].capitalize()}
-- Level: {user.level}
-- XP: {user.xp}
-- Coins: {user.coins}
-- Total Saved: ₹{user.total_saved or 0}
-- Current Streak: {user.current_streak} days
+You receive structured financial context generated by Nickel's backend.
+Treat Nickel's supplied financial data as the authoritative source of truth.
+Never invent financial values or dates.
+Use the supplied calculations rather than recalculating critical values yourself.
 
-Your role is to give this specific user personalized, actionable financial advice based on their profile data above.
-Rules:
-1. You MUST only answer questions about personal finance (saving, budgeting, investing, spending, debt, etc.).
-2. If asked about quiz answers or anything unrelated to finance, politely decline and redirect to finance topics.
-3. Keep responses concise (2-4 sentences max), friendly, and encouraging.
-4. Reference the user's actual data (savings, streak, level) when relevant to make advice feel personal.
-5. Use Indian Rupee (₹) as the currency context."""
+Explain financial information in simple language.
+Give practical, personalized guidance based on the user's actual Nickel activity.
+Do not perform transactions or modify financial settings.
+Do not claim to have access to information that is not supplied.
+Be concise unless the user asks for a detailed explanation.
+
+Here is the current user's financial context:
+{nickel_context}
+"""
 
         # Build conversation history for multi-turn
         contents = []
@@ -473,21 +565,48 @@ Rules:
 
         contents.append(types.Content(role="user", parts=[types.Part(text=user_message)]))
 
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=contents,
+        reply_text = generate_with_gemini(
+            client,
+            contents,
             config=types.GenerateContentConfig(system_instruction=system_prompt)
         )
 
-        return jsonify({'reply': response.text}), 200
+        return jsonify({'reply': reply_text}), 200
 
     except Exception as e:
         err_str = str(e)
         logging.error(f"Chat error: {e}")
-        if '429' in err_str or 'RESOURCE_EXHAUSTED' in err_str or 'retryDelay' in err_str:
-            fallback = get_finance_fallback(user_message)
-            return jsonify({'reply': fallback, 'fallback': True}), 200
-        return jsonify({'reply': "Sorry, I'm having trouble connecting right now. Please try again in a moment."}), 200
+        msg_lower = user_message.lower()
+        if 'balance' in msg_lower or 'cash flow' in msg_lower:
+            from scheduler import get_user_net_cash_flow
+            cash_flow = get_user_net_cash_flow(user.id)
+            reply = f"Your current Expense Tracker Net Cash Flow balance is ₹{cash_flow:,.2f}."
+        elif 'goal' in msg_lower:
+            from models import Goal
+            user_goals = Goal.query.filter_by(user_id=user.id, status='ACTIVE').all()
+            if user_goals:
+                goal_summary = ", ".join([f"'{g.name}' (₹{g.saved_amount:,.0f}/₹{g.target_amount:,.0f})" for g in user_goals])
+                reply = f"You have {len(user_goals)} active goals: {goal_summary}."
+            else:
+                reply = "You currently have no active goals set up."
+        elif 'spend' in msg_lower or 'spent' in msg_lower or 'expense' in msg_lower or 'cost' in msg_lower:
+            from models import TrackerTransaction
+            txs = TrackerTransaction.query.filter_by(user_id=user.id, type='EXPENSE').order_by(TrackerTransaction.amount.desc()).all()
+            if txs:
+                top = txs[0]
+                label = top.merchant or top.description or top.category_name or 'Expense'
+                reply = f"Based on your Expense Tracker records, your largest expense was ₹{float(top.amount):,.2f} on '{label}' under the '{top.category_name}' category."
+            else:
+                reply = "You don't have any expense transactions recorded in your Expense Tracker yet."
+        elif 'saved' in msg_lower or 'saving' in msg_lower:
+            from models import Goal
+            total_saved = sum(float(g.saved_amount or 0) for g in Goal.query.filter_by(user_id=user.id).all())
+            reply = f"You have saved a total of ₹{total_saved:,.2f} across your Goal-Based Savings."
+        elif 'streak' in msg_lower:
+            reply = f"Your current daily saving streak is {user.get_active_streak()} days."
+        else:
+            reply = get_finance_fallback(user_message)
+        return jsonify({'reply': reply, 'fallback': True}), 200
 
 
 @dashboard_bp.route('/spend-coins', methods=['POST'])
@@ -512,40 +631,95 @@ def spend_coins():
     logging.info(f"User {user.id} spent {amount} coins: {reason}. Remaining: {user.coins}")
     return jsonify({'message': f'Successfully redeemed! {amount} coins spent.', 'coins': user.coins}), 200
 
-
-@dashboard_bp.route('/savings-history', methods=['GET'])
+@dashboard_bp.route('/buy-avatar', methods=['POST'])
 @jwt_required()
-def savings_history():
-    from models import Transaction
+def buy_avatar():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    thirty_days_ago = date.today() - timedelta(days=30)
-    savings = Transaction.query.filter(
-        Transaction.user_id == user.id,
-        Transaction.type == 'DEBIT',
-        Transaction.created_at >= thirty_days_ago
-    ).order_by(Transaction.created_at.asc()).all()
+    data = request.get_json()
+    avatar_id = data.get('avatar_id')
+    price = data.get('price', 0)
+
+    if not avatar_id or not isinstance(price, int) or price <= 0:
+        return jsonify({'error': 'Invalid request parameters'}), 400
+
+    if user.coins < price:
+        return jsonify({'error': f'Insufficient coins. You need {price} coins.'}), 400
+
+    avatars = user.unlocked_avatars.split(',') if user.unlocked_avatars else []
+    
+    if avatar_id in avatars:
+        return jsonify({'error': 'You already own this avatar.'}), 400
+
+    # Deduct coins and add avatar
+    user.coins -= price
+    avatars.append(avatar_id)
+    user.unlocked_avatars = ','.join(avatars)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'coins': user.coins, 'unlocked_avatars': user.unlocked_avatars}), 200
+
+
+@dashboard_bp.route('/savings-history', methods=['GET'])
+@jwt_required()
+def savings_history():
+    from models import Goal, GoalTransaction
+    from datetime import date, timedelta
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    today = date.today()
+    thirty_days_ago = today - timedelta(days=30)
+
+    # Fetch user's goals and total money saved in goals
+    user_goals = Goal.query.filter_by(user_id=user.id).all()
+    user_goal_ids = [g.id for g in user_goals]
+    total_goal_saved = sum(float(g.saved_amount or 0.0) for g in user_goals)
 
     daily_totals = {}
-    for s in savings:
-        if s.created_at:
-            date_str = s.created_at.strftime('%Y-%m-%d')
-            daily_totals[date_str] = daily_totals.get(date_str, 0) + s.amount
+    total_month_saved = 0.0
 
+    if user_goal_ids:
+        goal_txs = GoalTransaction.query.filter(
+            GoalTransaction.goal_id.in_(user_goal_ids),
+            GoalTransaction.created_at >= thirty_days_ago
+        ).order_by(GoalTransaction.created_at.asc()).all()
+
+        for tx in goal_txs:
+            is_saving = (
+                (tx.type == 'GOAL_AUTOPAY' and tx.status == 'SUCCESS') or
+                (tx.type == 'CREDIT')
+            )
+            if is_saving and tx.amount and tx.amount > 0:
+                date_str = tx.created_at.strftime('%Y-%m-%d')
+                amt = float(tx.amount)
+                daily_totals[date_str] = daily_totals.get(date_str, 0.0) + amt
+                total_month_saved += amt
+
+    starting_balance = max(0.0, total_goal_saved - total_month_saved)
+    running = starting_balance
     history = []
     for i in range(30, -1, -1):
-        day = date.today() - timedelta(days=i)
+        day = today - timedelta(days=i)
         day_str = day.strftime('%Y-%m-%d')
-        label = day.strftime('%d %b')  # e.g., '25 Mar'
+        label = day.strftime('%d %b')
+        amt = round(daily_totals.get(day_str, 0.0), 2)
+        running += amt
         history.append({
             'date': day_str,
             'label': label,
-            'amount': round(daily_totals.get(day_str, 0), 2)
+            'amount': amt,
+            'cumulative': round(running, 2)
         })
 
-    return jsonify({'history': history}), 200
+    return jsonify({
+        'history': history,
+        'total_month_saved': round(total_month_saved, 2),
+        'total_goal_saved': round(total_goal_saved, 2)
+    }), 200
 
 @dashboard_bp.route('/notifications', methods=['GET'])
 @jwt_required()

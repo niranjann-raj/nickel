@@ -1,9 +1,10 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopNavbar from './TopNavbar';
 import ChatBot from './ChatBot';
 import { api } from './api';
+import MatrixLoader from '../components/ui/MatrixLoader';
 
 interface UserProfile {
     id: number;
@@ -16,6 +17,8 @@ interface UserProfile {
     current_streak: number;
     total_saved: number;
     avatar?: string;
+    streak_shields: number;
+    unlocked_avatars: string;
 }
 
 export interface AppNotification {
@@ -47,6 +50,7 @@ const DashboardContext = createContext<DashboardContextType>({
 export const useDashboard = () => useContext(DashboardContext);
 
 export default function DashboardLayout() {
+    const location = useLocation();
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [user, setUser] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
@@ -68,12 +72,17 @@ export default function DashboardLayout() {
     };
 
     useEffect(() => {
-        const isDark = localStorage.getItem('theme') === 'dark';
+        const isDark = localStorage.getItem('theme') !== 'light';
         setIsDarkMode(isDark);
         if (isDark) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
         fetchUser();
     }, []);
+
+    // Re-sync user profile on navigation to keep streak, coins, and XP 100% updated
+    useEffect(() => {
+        fetchUser();
+    }, [location.pathname]);
 
     const fetchUser = async () => {
         try {
@@ -107,12 +116,21 @@ export default function DashboardLayout() {
         else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
     };
 
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#09090b] text-white gap-4">
+                <MatrixLoader size="lg" variant="orbit" rounded />
+                <span className="text-xs text-gray-500 tracking-wider uppercase font-medium">Loading Nickel...</span>
+            </div>
+        );
+    }
+
     return (
         <DashboardContext.Provider value={{ user, refreshUser: fetchUser, loading, notifications, addNotification, clearNotifications }}>
-            <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-body">
+            <div className="dashboard-layout flex h-screen overflow-hidden text-gray-900 dark:text-gray-100 font-body">
                 <Sidebar />
 
-                <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="dashboard-content-wrapper flex-1 flex flex-col overflow-hidden">
                     <TopNavbar
                         isDarkMode={isDarkMode}
                         onToggleTheme={toggleTheme}

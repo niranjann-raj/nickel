@@ -10,8 +10,10 @@ from flask_jwt_extended import JWTManager
 from models import db
 from routes.auth import auth_bp, bcrypt
 from routes.dashboard import dashboard_bp
-from routes.bank import bank_bp
-from routes.autopay import autopay_bp
+from routes.goals import goals_bp
+from routes.gamification import gamification_bp
+from routes.tracker import tracker_bp
+from routes.split import split_bp
 from scheduler import start_scheduler
 
 def create_app():
@@ -32,19 +34,21 @@ def create_app():
     # Blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(dashboard_bp, url_prefix='/api')
-    app.register_blueprint(bank_bp, url_prefix='/api/bank')
-    app.register_blueprint(autopay_bp, url_prefix='/api/autopay')
+    app.register_blueprint(goals_bp, url_prefix='/api/goals')
+    app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
+    app.register_blueprint(tracker_bp, url_prefix='/api/tracker')
+    app.register_blueprint(split_bp, url_prefix='/api/split')
 
     # Create tables
     with app.app_context():
         db.create_all()
-        
-    start_scheduler(app)
 
     return app
 
 
 if __name__ == '__main__':
     app = create_app()
+    # Start background scheduler
+    start_scheduler(app)
     print(">>> Nickel backend running on http://localhost:5000")
-    app.run(debug=True, port=5000)
+    app.run(host='127.0.0.1', port=5000, debug=False, threaded=True)
