@@ -1,7 +1,7 @@
-# 🪙 Nickel — AI-Powered Personal Finance & Gamified Wealth Platform
+# Nickel — AI-Powered Personal Finance & Gamified Wealth Platform
 
 <p align="center">
-  <img src="public/logo.png" alt="Nickel Logo" width="120" style="border-radius: 24px;" />
+  <img src="logo.png" alt="Nickel Logo" width="120" />
 </p>
 
 <p align="center">
